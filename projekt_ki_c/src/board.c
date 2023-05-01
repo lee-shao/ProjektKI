@@ -42,7 +42,6 @@ void print_board(board_state* pos) {
 }
 
 board_state* fen_to_board(char* fen) {
-    //TODO: implement
     //alloc board
     board_state *board = malloc(sizeof(board_state));
     memset(board, 0, sizeof(board_state));
@@ -97,4 +96,62 @@ board_state* fen_to_board(char* fen) {
 char* board_to_fen(board_state* state) {
     //TODO: implement
     return NULL;
+}
+
+int perform_move(board_state* state, __uint64_t from, __uint64_t to) {
+    //note: maybe give player as argument?
+    int from_player = 0;
+    int to_player = 0;
+
+    //check from pos
+    if (state->black & from)
+        from_player = -1; //black
+    else if (state->white & from)
+        from_player = 1; //white
+
+    if (from_player == 0)
+        return 1; //invalid start pos
+
+    //check to pos
+    if (state->black & to)
+        to_player = -1; //black
+    else if (state->white & to)
+        to_player = 1; //white
+    
+    if (from_player == to_player)
+        return 2; //invalid to pos (can't take own piece)
+
+    //get piece type to move
+    //note: this fails if the board is in an invalid state!
+    int piece_type = 0;
+    for (; piece_type < 6; piece_type++) {
+        if (state->pieces[piece_type] & from) {
+            break; //piece type found
+        }
+    }
+
+    //TODO: check move valid
+
+    //perform move
+    state->pieces[piece_type] &= ~from;
+
+    if (to_player != 0) {
+        for (int i = 0; i < 6; i++) {
+            state->pieces[i] &= ~to; //take piece at to pos
+        }
+    }
+    state->pieces[piece_type] |= to;
+
+    //update player boards
+    state->white &= ~from;
+    state->black &= ~from;
+    if (from_player == 1) {
+        state->white |= to;
+        state->black &= ~to;
+    } else {
+        state->black |= to;
+        state->white &= ~to;
+    }
+
+    return 0; //move successful
 }

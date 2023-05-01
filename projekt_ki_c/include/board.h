@@ -21,3 +21,11 @@ void print_board(board_state* pos);
 
 board_state* fen_to_board(char* fen);
 char* board_to_fen(board_state* state);
+
+/*
+ * performs specified move
+ * from: position of piece to move
+ * to: destination of the move
+ * note: please only set one bit each. results in unspecified behaviour otherwise.
+ */
+int perform_move(board_state* state, __uint64_t from, __uint64_t to);

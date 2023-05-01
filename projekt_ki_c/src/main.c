@@ -13,7 +13,30 @@ int main(int argc, char **argv) {
     // np->white =         0b0000000000000000000000000000000000000000000000001111111111111111;
     board_state *np = fen_to_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"); //"r1b1k1nr/p2p1pNp/n2B4/1p1NP2P/6P1/3P1Q2/P1P1K3/q5b1"
 
-    print_board(np);
+    //simple move interface for testing
+    while (1) {
+        print_board(np);
+
+        //read move accepts move in format: XY*XY examples: A2-A3, B2 B3
+        char *move = NULL;
+        size_t len = 0;
+
+        if (getline(&move, &len, stdin) != -1) {
+            if (strlen(move) >= 5) {
+                //convert move coordinates
+                //note: does not check for invalid input
+                __uint64_t from =   (__uint64_t)1 << (7 - (move[0] - 'A') + (move[1] - '1') * 8);
+                __uint64_t to =     (__uint64_t)1 << (7 - (move[3] - 'A') + (move[4] - '1') * 8);
+                if (perform_move(np, from, to) != 0) {
+                    printf("invalid move!\n");
+                }
+            } else if (strlen(move) >= 1) {
+                if (move[0] == 'q')
+                    break;
+            }
+        }
+    }
+
 
     free(np);
 
