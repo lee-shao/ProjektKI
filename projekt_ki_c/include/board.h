@@ -8,14 +8,36 @@
 enum pieces {PAWN = 0, BISHOP, KNIGHT, ROOK, QUEEN, KING};
 extern const char PIECE_CHARS[];
 
-//stores the pieces positions on the board
+/*
+ * stores the pieces positions on the board
+ * pieces: bitboards to store the pieces. Use enum pieces as index
+ * black: bitboard to represent black pieces
+ * white bitboard to represent white pieces
+ * player: -1: black, 1: white
+ */
 typedef struct _board_state {
     //pieces
-    __uint64_t pieces[6];
+    __uint64_t  pieces[6];
     //player
-    __uint64_t black;
-    __uint64_t white;
+    __uint64_t  black;
+    __uint64_t  white;
+    __int8_t    player;
 } board_state;
+
+/*
+ * stores one or multipe moves
+ * from: position of piece to move
+ * to: destination of the move
+ * note: please only set one bit each. results in unspecified behaviour otherwise.
+ * piece: piece type to move. -1 when unknown
+ * next: pointer to next move
+ */
+typedef struct _board_move {
+    __uint64_t  from;
+    __uint64_t  to;
+    int         piece;
+    struct _board_move *next; //make it a linked list
+} board_move;
 
 void print_board(board_state* pos);
 
@@ -23,9 +45,21 @@ board_state* fen_to_board(char* fen);
 char* board_to_fen(board_state* state);
 
 /*
- * performs specified move
- * from: position of piece to move
- * to: destination of the move
- * note: please only set one bit each. results in unspecified behaviour otherwise.
+ * Converts a piece char in fen notation to an array index for the pieces array
  */
-int perform_move(board_state* state, __uint64_t from, __uint64_t to);
+int get_piece_from_fen(char fen);
+
+/*
+ * Extracts player from fen char (1: white, -1: black)
+ */
+__int8_t get_player_from_fen(char fen);
+
+/*
+ * Converts a fen move string to a board_move
+ */
+board_move* fen_to_move(char *fen, board_state *state);
+
+/*
+ * performs specified move
+ */
+int perform_move(board_state* state, board_move* move);
