@@ -3,6 +3,10 @@
 #include <string.h>
 
 #include "board.h"
+#include "network.h"
+
+int network_enabled = 0; //set to one if you want to connect to the server
+int self_player = 1; //player you want to be. CHANGE ME should be somewhere else!
 
 int main(int argc, char **argv) {
     // board_state *np = malloc(sizeof(board_state));
@@ -14,10 +18,42 @@ int main(int argc, char **argv) {
     board_state *np = fen_to_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"); //"r1b1k1nr/p2p1pNp/n2B4/1p1NP2P/6P1/3P1Q2/P1P1K3/q5b1"
     np->player = 1;
 
+    if (network_enabled) {
+        //connect to server if networking is enabled
+        if (network_connect("127.0.0.1", "4466") > 0) {
+            if (self_player == 1) {
+                send(network_socket, "w\n", 2, 0); //white
+            } else {
+                send(network_socket, "b\n", 2, 0); //black
+            }
+        } else {
+            printf("connection failed!\n");
+            network_enabled = 0;
+        }
+    }
+
     //simple move interface for testing
     while (1) {
         print_board(np);
         printf("player: %d\n", np->player);
+
+        //handle network move
+        if (network_enabled) {
+            if (np->player != self_player) {
+                //receive move
+                board_move* b_move = network_listen_for_move(np, network_socket);
+
+                if (b_move != NULL) {
+                    //perform move
+                    int move_code = 0;
+                    if ((move_code = perform_move(np, b_move)) != 0) {
+                        printf("invalid move!%d\n", move_code);
+                    }
+                    free(b_move);
+                }
+                continue; //skip console read for this loop execution
+            }
+        }
 
         //read move accepts move in format: XY*XY examples: A2-A3, B2 B3
         char *move = NULL;
@@ -44,6 +80,10 @@ int main(int argc, char **argv) {
                 int move_code = 0;
                 if (b_move == NULL || (move_code = perform_move(np, b_move)) != 0) {
                     printf("invalid move!%d\n", move_code);
+                } else if (network_enabled) {
+                    //send move to opponent
+                    //note: this doesn't make sure all bytes are sent.
+                    send(network_socket, move, strlen(move), 0);
                 }
                 free(b_move);
             } else if (strlen(move) >= 1) {

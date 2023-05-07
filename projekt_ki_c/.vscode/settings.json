@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "cstring": "c"
+        "cstring": "c",
+        "board.h": "c",
+        "network.h": "c",
+        "stdlib.h": "c"
     }
 }
