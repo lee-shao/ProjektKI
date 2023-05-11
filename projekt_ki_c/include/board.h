@@ -22,6 +22,8 @@ typedef struct _board_state {
     __uint64_t  black;
     __uint64_t  white;
     __int8_t    player;
+    //possible moves
+    __uint64_t possible_moves;
 } board_state;
 
 /*

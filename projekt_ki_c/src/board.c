@@ -237,3 +237,200 @@ int perform_move(board_state* state, board_move* move) {
 
     return 0; //move successful
 }
+
+board_state* get_all_possible_moves(int piecetype, board_move* move) {
+    __uint64_t possible_moves;
+    __uint64_t f = move->from;
+    __uint64_t a_col = 0x7F7F7F7F7F7F7F7F;
+    __uint64_t h_col = 0xFEFEFEFEFEFEFEFE;
+    __uint64_t top_row = 0xFF00000000000000;
+    __uint64_t bot_row = 0x00000000000000FF;
+
+    switch (piecetype)
+    {
+    case PAWN:
+        // Either pawn is at left/right border or between
+        // TODO: extra rules (attacking, double step, promotion, en-passant)
+        if (f & a_col) {
+            possible_moves = f<<8 || f<<7;
+        } else if (f & h_col) {
+            possible_moves = f<<9 || f<<8;
+        } else {
+            possible_moves = f<<9 || f<<8 || f<<7;
+        }
+        return possible_moves;
+    case BISHOP:
+        if (f & a_col) {
+            // 1 = diagonally top right, 2 = diagonally bottom right
+            possible_moves = linear_movement(1, move) || linear_movement(2, move);
+        } else if (f & h_col) {
+            // 3 = diagonally top left, 4 = diagonally bottom left
+            possible_moves |= linear_movement(3, move) || linear_movement(4, move);
+        } else {
+            // all diagonal directions
+            possible_moves = linear_movement(1, move) || linear_movement(2, move) || linear_movement(3, move) || linear_movement(4, move);
+        }
+        return possible_moves;
+    case KNIGHT:
+        return possible_moves;
+    case ROOK:
+        // 5 = left, 6 = right, 7 = top, 8 = bottom
+        if (f & a_col & top_row) {
+            possible_moves = linear_movement(6, move) || linear_movement(8, move);
+        } else if (f & h_col & top_row) {
+            possible_moves = linear_movement(5, move) || linear_movement(8, move);
+        } else if (f & top_row) {
+            possible_moves = linear_movement(5, move) || linear_movement(6, move) || linear_movement(8, move);
+        } else if (f & a_col & bot_row) {
+            possible_moves = linear_movement(6, move) || linear_movement(7, move);
+        } else if (f & h_col & bot_row) {
+            possible_moves = linear_movement(5, move) || linear_movement(7, move);
+        } else if (f & bot_row) {
+            possible_moves = linear_movement(5, move) || linear_movement(6, move) || linear_movement(7, move);
+        } else {
+            possible_moves = linear_movement(5, move) || linear_movement(6, move) || linear_movement(7, move) || linear_movement(8, move);
+        }
+        return possible_moves;
+    case QUEEN:
+        return possible_moves;
+    case KING:
+        // If the king is at the left/right border
+        if (f & a_col) {
+            possible_moves = f<<7 || f<<8 || f>>1 || f>>8 || f>> 9;
+        } else if (f & h_col) {
+            possible_moves = f<<9 || f<<8 || f<<1 || f>>8 || f>> 7;
+        } else {
+            possible_moves = f<<9 || f<<8 || f<<7 || f<<1 || f>>1 || f>>7 || f>>8 || f>>9;
+        }
+        return possible_moves;
+    default:
+        return -1; //invalid piecetype
+    }
+}
+
+
+__uint64_t diagonal_movement(board_move* move, __uint64_t occupied) {
+    __uint64_t possible_moves;
+    __uint64_t position = move->from;
+    __uint64_t top_left_to_bottom_right = 0x8040201008040201;
+    __uint64_t bottom_left_to_top_right = 0x0102040810204080;
+    __uint64_t mask;
+    int row = get_row(position); // Zeile
+    int col = get_col(position); // Spalte
+
+    /*diagonally top right*/
+    mask = (top_left_to_bottom_right >> ((7 - col) + 8 * (7 - row))); //& ~occupied;
+    possible_moves |= mask << ((7 - col) + 8 * (7 - row));
+
+    /*diagonally bottom right*/
+    mask = (bottom_left_to_top_right >> ((7 - col) + 8 * row)); //& ~occupied;
+    possible_moves |= mask << ((7 - col) + 8 * row);
+
+    /*diagonally top left*/
+    mask = (bottom_left_to_top_right >> (col + 8 * (7 - row))); //& ~occupied;
+    possible_moves |= mask << (col + 8 * (7 - row));
+
+    /*diagonally bottom left*/
+    mask = (top_left_to_bottom_right >> (col + 8 * row)); //& ~occupied;
+    possible_moves |= mask << (col + 8 * row);
+}
+
+__uint64_t straight_movement(board_move* move, __uint64_t occupied) {
+    __uint64_t possible_moves;
+    __uint64_t position = move->from;
+    __uint64_t top = 0xFF00000000000000;
+    __uint64_t bottom = 0x00000000000000FF;
+    __uint64_t left = 0x0101010101010101;
+    __uint64_t right = 0x8080808080808080;
+    __uint64_t mask;
+    int row = get_row(position); // Zeile
+    int col = get_col(position); // Spalte
+
+    /*top*/
+    mask = (top >> (8 * (7 - row))); //& ~occupied;
+    possible_moves |= mask << (8 * (7 - row));
+
+    /*bottom*/
+    mask = (bottom << (8 * row)); //& ~occupied;
+    possible_moves |= mask << (8 * row);
+
+    /*left*/
+    mask = (left >> col); //& ~occupied;
+    possible_moves |= mask << col;
+
+    /*right*/
+    mask = (right << (7 - col)); //& ~occupied;
+    possible_moves |= mask << col;
+
+    return possible_moves;
+}
+
+/**
+__uint64_t linear_movement(int direction, board_move* move) {
+    __uint64_t line;
+    __uint64_t f = move->from;
+    __uint64_t tmp = f;
+
+    switch (direction)
+    {
+    //diagonally top right
+    case 1:
+        for (int i = 0; i<7; i++) {
+            tmp = tmp<<7;
+            line |= tmp;
+        }
+        break;
+    //diagonally bottom right
+    case 2:
+        for (int i = 0; i<7; i++) {
+            tmp = tmp>>9;
+            line |= tmp;
+        }
+        break;
+    //diagonally top left
+    case 3:
+        for (int i = 0; i<7; i++) {
+            tmp = tmp<<9;
+            line |= tmp;
+        }
+        break;
+    //diagonally bottom left
+    case 4:
+        for (int i = 0; i<7; i++) {
+            tmp = tmp>>7;
+            line |= tmp;
+        }
+        break;
+    //straight left
+    case 5:
+        for (int i = 0; i<7; i++) {
+            tmp = tmp<<1;
+            line |= tmp;
+        }
+        break;
+    //straight right
+    case 6:
+        for (int i = 0; i<7; i++) {
+            tmp = tmp>>1;
+            line |= tmp;
+        }
+        break;
+    //straight top
+    case 7:
+        for (int i = 0; i<7; i++) {
+            tmp = tmp<<8;
+            line |= tmp;
+        }
+        break;
+    //straight bottom
+    case 8:
+        for (int i = 0; i<7; i++) {
+            tmp = tmp>>8;
+            line |= tmp;
+        }
+        break;
+    return line;
+    }
+}
+**/
+
