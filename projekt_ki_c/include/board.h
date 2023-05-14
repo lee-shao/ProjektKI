@@ -7,6 +7,7 @@
 
 enum pieces {PAWN = 0, BISHOP, KNIGHT, ROOK, QUEEN, KING};
 extern const char PIECE_CHARS[];
+extern const int PIECE_VALUES[];
 
 /*
  * stores the pieces positions on the board
@@ -73,3 +74,9 @@ board_move* fen_to_move(char *fen, board_state *state);
  * performs specified move
  */
 int perform_move(board_state* state, board_move* move);
+
+/*
+ * Evaluates given board state
+ * if positive white is in advantage. if negative black is in advantage
+ */
+int evaluate_board_state(board_state* state);

@@ -1,6 +1,7 @@
 #include "board.h"
 
 const char PIECE_CHARS[] = {'P', 'B', 'N', 'R', 'Q', 'K'};
+const int PIECE_VALUES[] = {10, 30, 30, 50, 90, 20000};
 
 void print_board(board_state* pos) {
     printf(" | A| B| C| D| E| F| G| H|\n8|");
@@ -320,4 +321,31 @@ int perform_move(board_state* state, board_move* move) {
     state->player *= -1;
 
     return 0; //move successful
+}
+
+int evaluate_board_state(board_state* state) {
+    int value = 0;
+    for (int i = 0; i < 6; i++) {
+        //get pieces of both players
+        __uint64_t white = state->pieces[i] & state->white;
+        __uint64_t black = state->pieces[i] & state->black;
+        int count = 0;
+
+        //count white pieces
+        while (white)
+        {
+            white &= white - 1;
+            count++;
+        }
+
+        //simply substract the piece count of black
+        while (black)
+        {
+            black &= black - 1;
+            count--;
+        }
+
+        value += count * PIECE_VALUES[i];
+    }
+    return value;
 }
