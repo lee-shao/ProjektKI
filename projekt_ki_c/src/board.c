@@ -71,10 +71,10 @@ board_state* fen_to_board(char* fen) {
 
     //iterate over positions string
     int pos_len = strlen(positions);
-    int bit_pos = 56; //0b0000000000000000000000000000000000000000000000000000000000000000;
+    int bit_pos;
     int field_count = 0;
     for (int i = 0; i < pos_len && bit_pos >= 0; i++) {
-        bit_pos = ((63 - field_count) / 8) * 8 + (field_count % 8); //(54 - (field_count / 8) * 8) + field_count % 8;
+        bit_pos = ((63 - field_count) / 8) * 8 + (field_count % 8);
         if (positions[i] >= '0' && positions[i] <= '9') { //if is number
             field_count += positions[i] - '0'; //skip x amount of fields
         } else if (positions[i] != '/') {
