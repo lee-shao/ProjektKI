@@ -8,7 +8,7 @@ void print_board(board_state* pos) {
         //print curr field
         char player = ' ';
         char piece = ' ';
-        int bit_pos = 63 - i; //(i / 8) * 8 + 7 - (i % 8); // ahh what is this xD
+        int bit_pos = ((63 - i) / 8) * 8 + (i % 8);; //(i / 8) * 8 + 7 - (i % 8); // ahh what is this xD
 
         //extract piece
         for (int j = 0; j < 6; j++) {
@@ -70,10 +70,12 @@ board_state* fen_to_board(char* fen) {
 
     //iterate over positions string
     int pos_len = strlen(positions);
-    int bit_pos = 63;
+    int bit_pos = 56; //0b0000000000000000000000000000000000000000000000000000000000000000;
+    int field_count = 0;
     for (int i = 0; i < pos_len && bit_pos >= 0; i++) {
+        bit_pos = ((63 - field_count) / 8) * 8 + (field_count % 8); //(54 - (field_count / 8) * 8) + field_count % 8;
         if (positions[i] >= '0' && positions[i] <= '9') { //if is number
-            bit_pos -= positions[i] - '0'; //skip x amount of fields
+            field_count += positions[i] - '0'; //skip x amount of fields
         } else if (positions[i] != '/') {
             if (get_player_from_fen(positions[i]) == -1) { //check for lower case: black
                 board->black |= (__uint64_t)1 << bit_pos;
@@ -85,7 +87,7 @@ board_state* fen_to_board(char* fen) {
             int type = 0;
             if ((type = get_piece_from_fen(positions[i])) != -1) {
                 board->pieces[type] |= (__uint64_t)1 << bit_pos;
-                bit_pos--;
+                field_count++;
             }
         } else {
             //TODO: use '/' to try to fix wrongly formated fen strings
@@ -107,16 +109,16 @@ board_state* fen_to_board(char* fen) {
             switch (castling[i])
             {
             case 'K':
-                board->castling |= (__uint64_t)1 << (7 - ('C' - 'A'));
+                board->castling |= (__uint64_t)1 << (('C' - 'A'));
                 break;
             case 'Q':
-                board->castling |= (__uint64_t)1 << (7 - ('G' - 'A'));
+                board->castling |= (__uint64_t)1 << (('G' - 'A'));
                 break;
             case 'k':
-                board->castling |= (__uint64_t)1 << (7 - ('C' - 'A') + 7 * 8);
+                board->castling |= (__uint64_t)1 << (('C' - 'A') + 7 * 8);
                 break;
             case 'q':
-                board->castling |= (__uint64_t)1 << (7 - ('G' - 'A') + 7 * 8);
+                board->castling |= (__uint64_t)1 << (('G' - 'A') + 7 * 8);
                 break;
             default:
                 break;
@@ -128,7 +130,7 @@ board_state* fen_to_board(char* fen) {
     if (en_passant != NULL) {
         int en_passant_len = strlen(en_passant);
         if (en_passant_len == 2) {
-            board->en_passant |= (__uint64_t)1 << (7 - (toupper(en_passant[0]) - 'A') + (en_passant[1] - '1') * 8);
+            board->en_passant |= (__uint64_t)1 << ((toupper(en_passant[0]) - 'A') + (en_passant[1] - '1') * 8);
         }
     }
 
@@ -199,20 +201,20 @@ board_move* fen_to_move(char *fen, board_state *state) {
     //extract data from fen
     switch (len) {
         case 2: //pawn move
-            to = (__uint64_t)1 << (7 - (toupper(fen[0]) - 'A') + (fen[1] - '1') * 8);
+            to = (__uint64_t)1 << ((toupper(fen[0]) - 'A') + (fen[1] - '1') * 8);
             break;
         case 3: //piece type and target coords given
             piece_type = get_piece_from_fen(fen[0]); //get piece type
-            to = (__uint64_t)1 << (7 - (toupper(fen[1]) - 'A') + (fen[2] - '1') * 8);
+            to = (__uint64_t)1 << ((toupper(fen[1]) - 'A') + (fen[2] - '1') * 8);
             break;
         case 4: //piece type row or column and coords given
             piece_type = get_piece_from_fen(fen[0]); //get piece type
             if (toupper(fen[1]) >= 'A' && toupper(fen[1]) <= 'Z') {
-                from_column = 7 - (toupper(fen[1]) - 'A');
+                from_column = (toupper(fen[1]) - 'A');
             } else {
                 from_row = (fen[1] - '1');
             }
-            to = (__uint64_t)1 << (7 - (toupper(fen[2]) - 'A') + (fen[3] - '1') * 8);
+            to = (__uint64_t)1 << ((toupper(fen[2]) - 'A') + (fen[3] - '1') * 8);
             break;
         default:
             return NULL; //invalid move
