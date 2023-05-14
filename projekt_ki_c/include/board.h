@@ -22,8 +22,6 @@ typedef struct _board_state {
     __uint64_t  black;
     __uint64_t  white;
     __int8_t    player;
-    //possible moves
-    __uint64_t possible_moves;
 } board_state;
 
 /*
@@ -65,3 +63,38 @@ board_move* fen_to_move(char *fen, board_state *state);
  * performs specified move
  */
 int perform_move(board_state* state, board_move* move);
+
+/**
+ * 
+*/
+__uint64_t get_all_possible_moves(int piecetype, __uint64_t f);
+
+/**
+ * 
+*/
+__uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied);
+
+/**
+ * 
+*/
+__uint64_t straight_movement(__uint64_t position, __uint64_t occupied);
+
+/**
+ * 
+*/
+__uint64_t knight_movement(__uint64_t position, __uint64_t occupied);
+
+/**
+ *
+*/
+int get_row(__uint64_t position);
+
+/**
+ * 
+*/
+int get_col(__uint64_t position);
+
+/**
+ * 
+*/
+void print_binary(__uint64_t value);

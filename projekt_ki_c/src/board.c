@@ -1,4 +1,6 @@
 #include "board.h"
+#include <inttypes.h>
+#include <math.h>
 
 const char PIECE_CHARS[] = {'P', 'B', 'N', 'R', 'Q', 'K'};
 
@@ -235,72 +237,63 @@ int perform_move(board_state* state, board_move* move) {
     //update player
     state->player *= -1;
 
+    /*
+    //Nicht löschen, brauche noch!
+    int pt = ROOK;
+    __uint64_t test = get_all_possible_moves(pt, move->from);
+    print_binary(test);
+    printf("\n");
+    */
+
     return 0; //move successful
 }
 
-board_state* get_all_possible_moves(int piecetype, board_move* move) {
-    __uint64_t possible_moves;
-    __uint64_t f = move->from;
+/**
+ * Diese Funktion berechnet für eine beliebige Figur das Bewegungsmuster und gibt diese in einem Bitboard aus
+ * @param piecetype Gibt den Figurentyp an, für den das Bewegungsmuster berechnet werden soll
+ * @param move enthält die Position, auf die sich die Figur befindet
+ * @return Gibt das Bewegungsmusters einer Figur als ein 64-Bit-Integer aus
+ * @author Shao
+*/
+__uint64_t get_all_possible_moves(int piecetype, __uint64_t f) {
+    __uint64_t possible_moves = 0;
     __uint64_t a_col = 0x7F7F7F7F7F7F7F7F;
     __uint64_t h_col = 0xFEFEFEFEFEFEFEFE;
-    __uint64_t top_row = 0xFF00000000000000;
-    __uint64_t bot_row = 0x00000000000000FF;
 
     switch (piecetype)
     {
-    case PAWN:
-        // Either pawn is at left/right border or between
-        // TODO: extra rules (attacking, double step, promotion, en-passant)
-        if (f & a_col) {
-            possible_moves = f<<8 || f<<7;
-        } else if (f & h_col) {
-            possible_moves = f<<9 || f<<8;
+    /**
+    * Either pawn is at left/right border or between
+    * TODO: extra rules (attacking, double step, promotion, en-passant)
+    */
+    case 0:
+        if (f & ~a_col) {
+            possible_moves |= f<<8 | f<<7;
+        } else if (f & ~h_col) {
+            possible_moves |= f<<9 | f<<8;
         } else {
-            possible_moves = f<<9 || f<<8 || f<<7;
+            possible_moves |= f<<9 | f<<8 | f<<7;
         }
         return possible_moves;
     case BISHOP:
-        if (f & a_col) {
-            // 1 = diagonally top right, 2 = diagonally bottom right
-            possible_moves = linear_movement(1, move) || linear_movement(2, move);
-        } else if (f & h_col) {
-            // 3 = diagonally top left, 4 = diagonally bottom left
-            possible_moves |= linear_movement(3, move) || linear_movement(4, move);
-        } else {
-            // all diagonal directions
-            possible_moves = linear_movement(1, move) || linear_movement(2, move) || linear_movement(3, move) || linear_movement(4, move);
-        }
+        possible_moves |= diagonal_movement(f, 0ULL);
         return possible_moves;
     case KNIGHT:
+        //possible_moves = knight_movement(f, 0ULL);
         return possible_moves;
     case ROOK:
-        // 5 = left, 6 = right, 7 = top, 8 = bottom
-        if (f & a_col & top_row) {
-            possible_moves = linear_movement(6, move) || linear_movement(8, move);
-        } else if (f & h_col & top_row) {
-            possible_moves = linear_movement(5, move) || linear_movement(8, move);
-        } else if (f & top_row) {
-            possible_moves = linear_movement(5, move) || linear_movement(6, move) || linear_movement(8, move);
-        } else if (f & a_col & bot_row) {
-            possible_moves = linear_movement(6, move) || linear_movement(7, move);
-        } else if (f & h_col & bot_row) {
-            possible_moves = linear_movement(5, move) || linear_movement(7, move);
-        } else if (f & bot_row) {
-            possible_moves = linear_movement(5, move) || linear_movement(6, move) || linear_movement(7, move);
-        } else {
-            possible_moves = linear_movement(5, move) || linear_movement(6, move) || linear_movement(7, move) || linear_movement(8, move);
-        }
         return possible_moves;
     case QUEEN:
+        possible_moves |= diagonal_movement(f, 0ULL) | straight_movement(f, 0ULL);
         return possible_moves;
     case KING:
         // If the king is at the left/right border
-        if (f & a_col) {
-            possible_moves = f<<7 || f<<8 || f>>1 || f>>8 || f>> 9;
-        } else if (f & h_col) {
-            possible_moves = f<<9 || f<<8 || f<<1 || f>>8 || f>> 7;
+        if (f & ~a_col) {
+            possible_moves |= f<<7 | f<<8 | f>>1 | f>>8 | f>> 9;
+        } else if (f & ~h_col) {
+            possible_moves |= f<<9 | f<<8 | f<<1 | f>>8 | f>> 7;
         } else {
-            possible_moves = f<<9 || f<<8 || f<<7 || f<<1 || f>>1 || f>>7 || f>>8 || f>>9;
+            possible_moves |= f<<9 | f<<8 | f<<7 | f<<1 | f>>1 | f>>7 | f>>8 | f>>9;
         }
         return possible_moves;
     default:
@@ -308,36 +301,55 @@ board_state* get_all_possible_moves(int piecetype, board_move* move) {
     }
 }
 
-
-__uint64_t diagonal_movement(board_move* move, __uint64_t occupied) {
-    __uint64_t possible_moves;
-    __uint64_t position = move->from;
+/**
+ * Diese Funktion berechnet ausgehend von einer Position alle diagonal erreichbaren Felder bis zum Spielbrettrand. 
+ * Dafür werden 2 Diagonale an die Position der Figur verschoben, um die Felder abzudecken, die die Figur in 4 Richtungen laufen kann. 
+ * TODO: In occupied kann ein 64-Bitboard gespeichert werden, wo bereits Figuren stehen.
+ * Das Invertierte Bitboard von occupied kann dann verUNDed werden um besetzte Felder auszuschließen. 
+ * @author Shao
+*/
+__uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied) {
+    __uint64_t possible_moves = 0;
     __uint64_t top_left_to_bottom_right = 0x8040201008040201;
     __uint64_t bottom_left_to_top_right = 0x0102040810204080;
     __uint64_t mask;
     int row = get_row(position); // Zeile
     int col = get_col(position); // Spalte
 
-    /*diagonally top right*/
-    mask = (top_left_to_bottom_right >> ((7 - col) + 8 * (7 - row))); //& ~occupied;
-    possible_moves |= mask << ((7 - col) + 8 * (7 - row));
+    //southwest
+    mask = (bottom_left_to_top_right >> ((8 - col) + 8 * (8 - row))); //& ~occupied;
+    possible_moves |= mask;
 
-    /*diagonally bottom right*/
-    mask = (bottom_left_to_top_right >> ((7 - col) + 8 * row)); //& ~occupied;
-    possible_moves |= mask << ((7 - col) + 8 * row);
+    //northwest
+    mask = (top_left_to_bottom_right << ((8 - col) + 8 * row-1)); //& ~occupied;
+    possible_moves |= mask;
 
-    /*diagonally top left*/
-    mask = (bottom_left_to_top_right >> (col + 8 * (7 - row))); //& ~occupied;
-    possible_moves |= mask << (col + 8 * (7 - row));
+    //southeast
+    mask = (top_left_to_bottom_right >> (col+1 + 8 * (8 - row))); //& ~occupied;
+    possible_moves |= mask;
 
-    /*diagonally bottom left*/
-    mask = (top_left_to_bottom_right >> (col + 8 * row)); //& ~occupied;
-    possible_moves |= mask << (col + 8 * row);
+    //northeast
+    mask = (bottom_left_to_top_right >> (col+1 + 8 * row+1)); //& ~occupied;
+    possible_moves |= mask;
+
+     /**
+    *print_binary(mask);
+    *printf("\n");
+    *print_binary(possible_moves);
+    */
+
+    return possible_moves;
 }
 
-__uint64_t straight_movement(board_move* move, __uint64_t occupied) {
-    __uint64_t possible_moves;
-    __uint64_t position = move->from;
+/**
+ * Diese Funktion berechnet ausgehend von einer Position alle gerade erreichbaren Felder bis zum Spielbrettrand. 
+ * Dafür werden Geraden an die Position der Figur verschoben, um die Felder abzudecken, die die Figur in 4 Richtungen laufen kann. 
+ * TODO: In occupied kann ein 64-Bitboard gespeichert werden, wo bereits Figuren stehen.
+ * Das Invertierte Bitboard von occupied kann dann verUNDed werden um besetzte Felder auszuschließen. 
+ * @author Shao
+*/
+__uint64_t straight_movement(__uint64_t position, __uint64_t occupied) {
+    __uint64_t possible_moves = 0;
     __uint64_t top = 0xFF00000000000000;
     __uint64_t bottom = 0x00000000000000FF;
     __uint64_t left = 0x0101010101010101;
@@ -346,91 +358,67 @@ __uint64_t straight_movement(board_move* move, __uint64_t occupied) {
     int row = get_row(position); // Zeile
     int col = get_col(position); // Spalte
 
-    /*top*/
+    //top
     mask = (top >> (8 * (7 - row))); //& ~occupied;
-    possible_moves |= mask << (8 * (7 - row));
+    possible_moves |= mask;
 
-    /*bottom*/
+    //bottom
     mask = (bottom << (8 * row)); //& ~occupied;
-    possible_moves |= mask << (8 * row);
+    possible_moves |= mask;
 
-    /*left*/
+    //left
     mask = (left >> col); //& ~occupied;
-    possible_moves |= mask << col;
+    possible_moves |= mask;
 
-    /*right*/
+    //right
     mask = (right << (7 - col)); //& ~occupied;
-    possible_moves |= mask << col;
+    possible_moves |= mask;
 
     return possible_moves;
 }
 
-/**
-__uint64_t linear_movement(int direction, board_move* move) {
-    __uint64_t line;
-    __uint64_t f = move->from;
-    __uint64_t tmp = f;
 
-    switch (direction)
-    {
-    //diagonally top right
-    case 1:
-        for (int i = 0; i<7; i++) {
-            tmp = tmp<<7;
-            line |= tmp;
-        }
-        break;
-    //diagonally bottom right
-    case 2:
-        for (int i = 0; i<7; i++) {
-            tmp = tmp>>9;
-            line |= tmp;
-        }
-        break;
-    //diagonally top left
-    case 3:
-        for (int i = 0; i<7; i++) {
-            tmp = tmp<<9;
-            line |= tmp;
-        }
-        break;
-    //diagonally bottom left
-    case 4:
-        for (int i = 0; i<7; i++) {
-            tmp = tmp>>7;
-            line |= tmp;
-        }
-        break;
-    //straight left
-    case 5:
-        for (int i = 0; i<7; i++) {
-            tmp = tmp<<1;
-            line |= tmp;
-        }
-        break;
-    //straight right
-    case 6:
-        for (int i = 0; i<7; i++) {
-            tmp = tmp>>1;
-            line |= tmp;
-        }
-        break;
-    //straight top
-    case 7:
-        for (int i = 0; i<7; i++) {
-            tmp = tmp<<8;
-            line |= tmp;
-        }
-        break;
-    //straight bottom
-    case 8:
-        for (int i = 0; i<7; i++) {
-            tmp = tmp>>8;
-            line |= tmp;
-        }
-        break;
-    return line;
-    }
+/**
+ * Bitmaske für den Springer
+ * 
+*/
+/*
+__uint64_t knight_movement(__uint64_t position, __uint64_t occupied) {
+    __uint64_t possible_moves = 0;
+    __uint64_t mask;
+    __uint64_t tmp = position;
+    int row = get_row(position);
+    int col = get_col(position);
+
+    return 0; //possible_moves;
 }
-**/
+*/
+
+int get_row(__uint64_t position) {
+    int row = log2(position) /8;
+    //printf("Zeile: %i\n", row);
+    return row;
+}
+
+int get_col(__uint64_t position) {
+    int col = (int) log2(position) % 8;
+    //printf("Spalte: %i\n", col);
+    return col;
+}
+
+void print_binary(__uint64_t value) {
+    __uint64_t mask = 1ull << 63;
+    for (int i = 0; i < 64; i++) {
+        if ((value & mask) != 0) {
+            printf("1");
+        } else {
+            printf("0");
+        }
+        if ((i + 1) % 8 == 0) {
+            printf("\n");
+        }
+        value <<= 1;
+    }
+    printf("\n");
+}
 
