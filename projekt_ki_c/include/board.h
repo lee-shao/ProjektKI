@@ -14,6 +14,10 @@ extern const char PIECE_CHARS[];
  * black: bitboard to represent black pieces
  * white bitboard to represent white pieces
  * player: -1: black, 1: white
+ * en_passant: possible en_passant targets
+ * castling: castling possibilities
+ * half_moves: moves (of each player) since last pawn move or piece capture
+ * full_moves: increments on every black move
  */
 typedef struct _board_state {
     //pieces
@@ -22,6 +26,12 @@ typedef struct _board_state {
     __uint64_t  black;
     __uint64_t  white;
     __int8_t    player;
+    //special moves
+    __uint64_t  en_passant;
+    __uint64_t  castling;
+    //clocks
+    __uint16_t  half_moves;
+    __uint16_t  full_moves;
 } board_state;
 
 /*
