@@ -42,20 +42,40 @@ void print_board(board_state* pos) {
 }
 
 board_state* fen_to_board(char* fen) {
-    //TODO: support full fen string with player info etc.
+    //copy string to make sure it is editable
+    char* fen_copy = calloc(strlen(fen) + 1, sizeof(char));
+    strcpy(fen_copy, fen);
 
     //alloc board
     board_state *board = malloc(sizeof(board_state));
     memset(board, 0, sizeof(board_state));
 
-    //iterate over fen string
-    int fen_len = strlen(fen);
+    //split fen string
+    char* positions = NULL;
+    char* player = NULL;
+    char* castling = NULL;
+    char* en_passant = NULL;
+    char* half_moves = NULL;
+    char* full_moves = NULL;
+
+    char delim[] = " ";
+    char* curr_split_state = fen_copy;
+    positions =  strtok_r(curr_split_state, delim, &curr_split_state);
+    player =     strtok_r(curr_split_state, delim, &curr_split_state);
+    castling =   strtok_r(curr_split_state, delim, &curr_split_state);
+    en_passant = strtok_r(curr_split_state, delim, &curr_split_state);
+    half_moves = strtok_r(curr_split_state, delim, &curr_split_state);
+    full_moves = strtok_r(curr_split_state, delim, &curr_split_state);
+
+
+    //iterate over positions string
+    int pos_len = strlen(positions);
     int bit_pos = 63;
-    for (int i = 0; i < fen_len && bit_pos >= 0; i++) {
-        if (fen[i] >= '0' && fen[i] <= '9') { //if is number
-            bit_pos -= fen[i] - '0'; //skip x amount of fields
-        } else if (fen[i] != '/') {
-            if (get_player_from_fen(fen[i]) == -1) { //check for lower case: black
+    for (int i = 0; i < pos_len && bit_pos >= 0; i++) {
+        if (positions[i] >= '0' && positions[i] <= '9') { //if is number
+            bit_pos -= positions[i] - '0'; //skip x amount of fields
+        } else if (positions[i] != '/') {
+            if (get_player_from_fen(positions[i]) == -1) { //check for lower case: black
                 board->black |= (__uint64_t)1 << bit_pos;
             } else { //white instead
                 board->white |= (__uint64_t)1 << bit_pos;
@@ -63,7 +83,7 @@ board_state* fen_to_board(char* fen) {
 
             //set piece type
             int type = 0;
-            if ((type = get_piece_from_fen(fen[i])) != -1) {
+            if ((type = get_piece_from_fen(positions[i])) != -1) {
                 board->pieces[type] |= (__uint64_t)1 << bit_pos;
                 bit_pos--;
             }
@@ -71,6 +91,59 @@ board_state* fen_to_board(char* fen) {
             //TODO: use '/' to try to fix wrongly formated fen strings
         }
     }
+
+    //get curr player
+    if (player != NULL) {
+        if (player[0] == 'w')
+            board->player = 1; //white
+        else
+            board->player = -1; //black
+    }
+
+    //extract castling possibilities
+    if (castling != NULL) {
+        int castle_len = strlen(castling);
+        for (int i = 0; i < castle_len; i++) {
+            switch (castling[i])
+            {
+            case 'K':
+                board->castling |= (__uint64_t)1 << (7 - ('C' - 'A'));
+                break;
+            case 'Q':
+                board->castling |= (__uint64_t)1 << (7 - ('G' - 'A'));
+                break;
+            case 'k':
+                board->castling |= (__uint64_t)1 << (7 - ('C' - 'A') + 7 * 8);
+                break;
+            case 'q':
+                board->castling |= (__uint64_t)1 << (7 - ('G' - 'A') + 7 * 8);
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
+    //extract en passant targets
+    if (en_passant != NULL) {
+        int en_passant_len = strlen(en_passant);
+        if (en_passant_len == 2) {
+            board->en_passant |= (__uint64_t)1 << (7 - (toupper(en_passant[0]) - 'A') + (en_passant[1] - '1') * 8);
+        }
+    }
+
+    //get halfmove clock
+    if (half_moves != NULL) {
+        board->half_moves = atoi(half_moves);
+    }
+
+    //get fullmove clock
+    if (full_moves != NULL) {
+        board->full_moves = atoi(full_moves);
+    }
+
+    //clean up
+    free(fen_copy);
 
     return board;
 }
@@ -175,7 +248,6 @@ board_move* fen_to_move(char *fen, board_state *state) {
 }
 
 int perform_move(board_state* state, board_move* move) {
-    //note: maybe give player as argument?
     int from_player = 0;
     int to_player = 0;
 
@@ -230,6 +302,16 @@ int perform_move(board_state* state, board_move* move) {
     } else {
         state->black |= move->to;
         state->white &= ~move->to;
+        //update full moves
+        state->full_moves++;
+    }
+    
+    //update half moves
+    if (piece_type == PAWN || to_player != 0) {
+        //reset on pawn move or if a piece is taken
+        state->half_moves = 0;
+    } else {
+        state->half_moves++;
     }
 
     //update player

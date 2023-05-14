@@ -15,8 +15,7 @@ int main(int argc, char **argv) {
     // np->pieces[KING] =  0b0100000000000000000000000000000000000000000000000000000000000000;
     // np->black =         0b1111111111111111000000000000000000000000000000000000000000000000;
     // np->white =         0b0000000000000000000000000000000000000000000000001111111111111111;
-    board_state *np = fen_to_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"); //"r1b1k1nr/p2p1pNp/n2B4/1p1NP2P/6P1/3P1Q2/P1P1K3/q5b1"
-    np->player = 1;
+    board_state *np = fen_to_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"); //"r1b1k1nr/p2p1pNp/n2B4/1p1NP2P/6P1/3P1Q2/P1P1K3/q5b1"
 
     if (network_enabled) {
         //connect to server if networking is enabled
@@ -35,7 +34,7 @@ int main(int argc, char **argv) {
     //simple move interface for testing
     while (1) {
         print_board(np);
-        printf("player: %d\n", np->player);
+        printf("player: %d, half-moves: %d, full-moves: %d\n", np->player, np->half_moves, np->full_moves);
 
         //handle network move
         if (network_enabled) {
