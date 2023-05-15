@@ -65,8 +65,8 @@ int main(int argc, char **argv) {
                 b_move->piece = -1; //unknown piece type
                 //convert move coordinates
                 //note: does not check for invalid input
-                b_move->from =   (__uint64_t)1 << (7 - (toupper(move[0]) - 'A') + (move[1] - '1') * 8);
-                b_move->to =     (__uint64_t)1 << (7 - (toupper(move[3]) - 'A') + (move[4] - '1') * 8);
+                b_move->from =   (__uint64_t)1 << ((toupper(move[0]) - 'A') + (move[1] - '1') * 8);
+                b_move->to =     (__uint64_t)1 << ((toupper(move[3]) - 'A') + (move[4] - '1') * 8);
 
                 int move_code = 0;
                 if ((move_code = perform_move(np, b_move)) != 0) {
