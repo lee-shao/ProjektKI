@@ -322,14 +322,14 @@ int perform_move(board_state* state, board_move* move) {
     //update player
     state->player *= -1;
 
-    
+    /*
     //Nicht löschen, brauche noch!
-    int pt = BISHOP;
+    int pt = KING;
     __uint64_t test = get_all_possible_moves(pt, move->from);
     printf("%" PRIu64 "\n", move->from);
     print_binary(test);
     printf("\n");
-    
+    */
 
     return 0; //move successful
 }
@@ -403,45 +403,20 @@ __uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied) {
     
     //links oben
     for (i = 1; row - i >= 0 && col - i >= 0; i++) {
-        possible_moves |= 1ULL << ((row - i) * 8 + (7 - (col - i)));
+        possible_moves |= 1ULL << ((row - i) * 8 + (col - i));
     }
     //rechts oben
     for (i = 1; row - i >= 0 && col + i < 8; i++) {
-        possible_moves |= 1ULL << ((row - i) * 8 + (7 - (col + i)));
+        possible_moves |= 1ULL << ((row - i) * 8 + (col + i));
     }
     //links unten
     for (i = 1; row + i < 8 && col - i >= 0; i++) {
-        possible_moves |= 1ULL << ((row + i) * 8 + (7 - (col - i)));
+        possible_moves |= 1ULL << ((row + i) * 8 + (col - i));
     }
     //rechts unten
     for (i = 1; row + i < 8 && col + i < 8; i++) {
-        possible_moves |= 1ULL << ((row + i) * 8 + (7 - (col + i)));
+        possible_moves |= 1ULL << ((row + i) * 8 + (col + i));
     }
-    
-    /*
-    //northwest
-    for (i = row-1, j = col-1; i >= 0 && j >= 0; i--, j--) {
-        possible_moves |= 1ULL << (i * 8 + j);
-    }
-    //northeast
-    for (i = row-1, j = col+1; i >= 0 && j < 8; i--, j++) {
-        possible_moves |= 1ULL << (i * 8 + j);
-    }
-    //southwest
-    for (i = row+1, j = col-1; i < 8 && j >= 0; i++, j--) {
-        possible_moves |= 1ULL << (i * 8 + j);
-    }
-    //southeast
-    for (i = row+1, j = col+1; i < 8 && j < 8; i++, j++) {
-        possible_moves |= 1ULL << (i * 8 + j);
-    }
-    */
-    
-    /**
-     *print_binary(mask);
-     *printf("\n");
-     *print_binary(possible_moves);
-    */
 
     return possible_moves;
 }
@@ -455,19 +430,28 @@ __uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied) {
 */
 __uint64_t straight_movement(__uint64_t position, __uint64_t occupied) {
     __uint64_t possible_moves = 0;
-    __uint64_t horizontal = 0x00000000000000FF;
-    __uint64_t vertical = 0x8080808080808080;
-    __uint64_t mask;
+    __uint64_t top = 0xFF00000000000000ULL;
+    __uint64_t bottom = 0x00000000000000FFULL;
+    __uint64_t left = 0x0101010101010101ULL;
+    __uint64_t right = 0x8080808080808080ULL;
+    __uint64_t mask = 1ULL << position;
     int row = get_row(position); // Zeile
     int col = get_col(position); // Spalte
 
-    mask = (horizontal << (8 * row)); //& ~occupied;
-    possible_moves |= mask;
+    //top
+    mask = (top >> (8 * (7 - row))); //& ~occupied;
+    possible_moves |= mask; // << (8 * (7 - row));
+    //bottom
+    mask = (bottom << (8 * row)); //& ~occupied;
+    possible_moves |= mask; // << (8 * row);
+    //left
+    mask = (left << col); //& ~occupied;
+    possible_moves |= mask; // << col;
+    //right
+    mask = (right >> (7 - col)); //~occupied;
+    possible_moves |= mask;// << col;
 
-    mask = (vertical >> col); //& ~occupied;
-    possible_moves |= mask;
-
-    //possible_moves &= ~position;
+    possible_moves &= ~position;
 
     return possible_moves;
 }
@@ -502,33 +486,18 @@ int get_col(__uint64_t position) {
 }
 
 void print_binary(__uint64_t value) {
-    int row, col;
+    int row, col = 0;
+
     for (row = 7; row >= 0; row--) {
-        for (col = 7; col >= 0; col--) {
-            __uint64_t mask = 1ULL << (row * 8 + col);
-            printf("%c ", (value & mask) ? '1' : '0');
+        printf("%i | ", row +1);
+        for (col = 0; col < 8; col++) {
+            __uint64_t bit = (value >> (row * 8 + col)) & 1;
+            printf("%lu ", bit);
         }
         printf("\n");
     }
+    printf("  | A B C D E F G H \n");
 }
-
-/*
-void print_binary(__uint64_t value) {
-    __uint64_t mask = 1ull << 63;
-    for (int i = 0; i < 64; i++) {
-        if ((value & mask) != 0) {
-            printf("1");
-        } else {
-            printf("0");
-        }
-        if ((i + 1) % 8 == 0) {
-            printf("\n");
-        }
-        value <<= 1;
-    }
-    printf("\n");
-}
-*/
 
 int evaluate_board_state(board_state* state) {
     int value = 0;
