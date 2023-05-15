@@ -239,7 +239,7 @@ int perform_move(board_state* state, board_move* move) {
 
     
     //Nicht löschen, brauche noch!
-    int pt = ROOK;
+    int pt = BISHOP;
     __uint64_t test = get_all_possible_moves(pt, move->from);
     print_binary(test);
     printf("\n");
@@ -311,32 +311,30 @@ __uint64_t get_all_possible_moves(int piecetype, __uint64_t f) {
 */
 __uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied) {
     __uint64_t possible_moves = 0;
-    __uint64_t top_left_to_bottom_right = 0x8040201008040201;
-    __uint64_t bottom_left_to_top_right = 0x0102040810204080;
-    __uint64_t mask;
     int row = get_row(position); // Zeile
     int col = get_col(position); // Spalte
-
-    //southwest
-    mask = (bottom_left_to_top_right >> ((8 - col) + 8 * (8 - row))); //& ~occupied;
-    possible_moves |= mask;
+    int i,j = 0;
 
     //northwest
-    mask = (top_left_to_bottom_right << ((8 - col) + 8 * row-1)); //& ~occupied;
-    possible_moves |= mask;
-
-    //southeast
-    mask = (top_left_to_bottom_right >> (col+1 + 8 * (8 - row))); //& ~occupied;
-    possible_moves |= mask;
-
+    for (i = row-1, j = col-1; i >= 0 && j >= 0; i--, j--) {
+        possible_moves |= 1ULL << (i * 8 + j);
+    }
     //northeast
-    mask = (bottom_left_to_top_right >> (col+1 + 8 * row+1)); //& ~occupied;
-    possible_moves |= mask;
-
-     /**
-    *print_binary(mask);
-    *printf("\n");
-    *print_binary(possible_moves);
+    for (i = row-1, j = col+1; i >= 0 && j < 8; i--, j++) {
+        possible_moves |= 1ULL << (i * 8 + j);
+    }
+    //southwest
+    for (i = row+1, j = col-1; i < 8 && j >= 0; i++, j--) {
+        possible_moves |= 1ULL << (i * 8 + j);
+    }
+    for (i = row+1, j = col+1; i < 8 && j < 8; i++, j++) {
+        possible_moves |= 1ULL << (i * 8 + j);
+    }
+    
+    /**
+     *print_binary(mask);
+     *printf("\n");
+     *print_binary(possible_moves);
     */
 
     return possible_moves;
