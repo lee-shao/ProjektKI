@@ -7,6 +7,7 @@
 
 enum pieces {PAWN = 0, BISHOP, KNIGHT, ROOK, QUEEN, KING};
 extern const char PIECE_CHARS[];
+extern const int PIECE_VALUES[];
 
 /*
  * stores the pieces positions on the board
@@ -14,6 +15,10 @@ extern const char PIECE_CHARS[];
  * black: bitboard to represent black pieces
  * white bitboard to represent white pieces
  * player: -1: black, 1: white
+ * en_passant: possible en_passant targets
+ * castling: castling possibilities
+ * half_moves: moves (of each player) since last pawn move or piece capture
+ * full_moves: increments on every black move
  */
 typedef struct _board_state {
     //pieces
@@ -22,6 +27,12 @@ typedef struct _board_state {
     __uint64_t  black;
     __uint64_t  white;
     __int8_t    player;
+    //special moves
+    __uint64_t  en_passant;
+    __uint64_t  castling;
+    //clocks
+    __uint16_t  half_moves;
+    __uint16_t  full_moves;
 } board_state;
 
 /*
@@ -98,3 +109,9 @@ int get_col(__uint64_t position);
  * 
 */
 void print_binary(__uint64_t value);
+
+/*
+ * Evaluates given board state
+ * if positive white is in advantage. if negative black is in advantage
+ */
+int evaluate_board_state(board_state* state);

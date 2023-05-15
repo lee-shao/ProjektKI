@@ -3,6 +3,7 @@
 #include <math.h>
 
 const char PIECE_CHARS[] = {'P', 'B', 'N', 'R', 'Q', 'K'};
+const int PIECE_VALUES[] = {10, 30, 30, 50, 90, 20000};
 
 void print_board(board_state* pos) {
     printf(" | A| B| C| D| E| F| G| H|\n8|");
@@ -10,7 +11,7 @@ void print_board(board_state* pos) {
         //print curr field
         char player = ' ';
         char piece = ' ';
-        int bit_pos = 63 - i; //(i / 8) * 8 + 7 - (i % 8); // ahh what is this xD
+        int bit_pos = ((63 - i) / 8) * 8 + (i % 8);; //(i / 8) * 8 + 7 - (i % 8); // ahh what is this xD
 
         //extract piece
         for (int j = 0; j < 6; j++) {
@@ -44,20 +45,42 @@ void print_board(board_state* pos) {
 }
 
 board_state* fen_to_board(char* fen) {
-    //TODO: support full fen string with player info etc.
+    //copy string to make sure it is editable
+    char* fen_copy = calloc(strlen(fen) + 1, sizeof(char));
+    strcpy(fen_copy, fen);
 
     //alloc board
     board_state *board = malloc(sizeof(board_state));
     memset(board, 0, sizeof(board_state));
 
-    //iterate over fen string
-    int fen_len = strlen(fen);
-    int bit_pos = 63;
-    for (int i = 0; i < fen_len && bit_pos >= 0; i++) {
-        if (fen[i] >= '0' && fen[i] <= '9') { //if is number
-            bit_pos -= fen[i] - '0'; //skip x amount of fields
-        } else if (fen[i] != '/') {
-            if (get_player_from_fen(fen[i]) == -1) { //check for lower case: black
+    //split fen string
+    char* positions = NULL;
+    char* player = NULL;
+    char* castling = NULL;
+    char* en_passant = NULL;
+    char* half_moves = NULL;
+    char* full_moves = NULL;
+
+    char delim[] = " ";
+    char* curr_split_state = fen_copy;
+    positions =  strtok_r(curr_split_state, delim, &curr_split_state);
+    player =     strtok_r(curr_split_state, delim, &curr_split_state);
+    castling =   strtok_r(curr_split_state, delim, &curr_split_state);
+    en_passant = strtok_r(curr_split_state, delim, &curr_split_state);
+    half_moves = strtok_r(curr_split_state, delim, &curr_split_state);
+    full_moves = strtok_r(curr_split_state, delim, &curr_split_state);
+
+
+    //iterate over positions string
+    int pos_len = strlen(positions);
+    int bit_pos;
+    int field_count = 0;
+    for (int i = 0; i < pos_len && bit_pos >= 0; i++) {
+        bit_pos = ((63 - field_count) / 8) * 8 + (field_count % 8);
+        if (positions[i] >= '0' && positions[i] <= '9') { //if is number
+            field_count += positions[i] - '0'; //skip x amount of fields
+        } else if (positions[i] != '/') {
+            if (get_player_from_fen(positions[i]) == -1) { //check for lower case: black
                 board->black |= (__uint64_t)1 << bit_pos;
             } else { //white instead
                 board->white |= (__uint64_t)1 << bit_pos;
@@ -65,14 +88,67 @@ board_state* fen_to_board(char* fen) {
 
             //set piece type
             int type = 0;
-            if ((type = get_piece_from_fen(fen[i])) != -1) {
+            if ((type = get_piece_from_fen(positions[i])) != -1) {
                 board->pieces[type] |= (__uint64_t)1 << bit_pos;
-                bit_pos--;
+                field_count++;
             }
         } else {
             //TODO: use '/' to try to fix wrongly formated fen strings
         }
     }
+
+    //get curr player
+    if (player != NULL) {
+        if (player[0] == 'w')
+            board->player = 1; //white
+        else
+            board->player = -1; //black
+    }
+
+    //extract castling possibilities
+    if (castling != NULL) {
+        int castle_len = strlen(castling);
+        for (int i = 0; i < castle_len; i++) {
+            switch (castling[i])
+            {
+            case 'K':
+                board->castling |= (__uint64_t)1 << (('C' - 'A'));
+                break;
+            case 'Q':
+                board->castling |= (__uint64_t)1 << (('G' - 'A'));
+                break;
+            case 'k':
+                board->castling |= (__uint64_t)1 << (('C' - 'A') + 7 * 8);
+                break;
+            case 'q':
+                board->castling |= (__uint64_t)1 << (('G' - 'A') + 7 * 8);
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
+    //extract en passant targets
+    if (en_passant != NULL) {
+        int en_passant_len = strlen(en_passant);
+        if (en_passant_len == 2) {
+            board->en_passant |= (__uint64_t)1 << ((toupper(en_passant[0]) - 'A') + (en_passant[1] - '1') * 8);
+        }
+    }
+
+    //get halfmove clock
+    if (half_moves != NULL) {
+        board->half_moves = atoi(half_moves);
+    }
+
+    //get fullmove clock
+    if (full_moves != NULL) {
+        board->full_moves = atoi(full_moves);
+    }
+
+    //clean up
+    free(fen_copy);
 
     return board;
 }
@@ -128,20 +204,20 @@ board_move* fen_to_move(char *fen, board_state *state) {
     //extract data from fen
     switch (len) {
         case 2: //pawn move
-            to = (__uint64_t)1 << (7 - (toupper(fen[0]) - 'A') + (fen[1] - '1') * 8);
+            to = (__uint64_t)1 << ((toupper(fen[0]) - 'A') + (fen[1] - '1') * 8);
             break;
         case 3: //piece type and target coords given
             piece_type = get_piece_from_fen(fen[0]); //get piece type
-            to = (__uint64_t)1 << (7 - (toupper(fen[1]) - 'A') + (fen[2] - '1') * 8);
+            to = (__uint64_t)1 << ((toupper(fen[1]) - 'A') + (fen[2] - '1') * 8);
             break;
         case 4: //piece type row or column and coords given
             piece_type = get_piece_from_fen(fen[0]); //get piece type
             if (toupper(fen[1]) >= 'A' && toupper(fen[1]) <= 'Z') {
-                from_column = 7 - (toupper(fen[1]) - 'A');
+                from_column = (toupper(fen[1]) - 'A');
             } else {
                 from_row = (fen[1] - '1');
             }
-            to = (__uint64_t)1 << (7 - (toupper(fen[2]) - 'A') + (fen[3] - '1') * 8);
+            to = (__uint64_t)1 << ((toupper(fen[2]) - 'A') + (fen[3] - '1') * 8);
             break;
         default:
             return NULL; //invalid move
@@ -177,7 +253,6 @@ board_move* fen_to_move(char *fen, board_state *state) {
 }
 
 int perform_move(board_state* state, board_move* move) {
-    //note: maybe give player as argument?
     int from_player = 0;
     int to_player = 0;
 
@@ -232,6 +307,16 @@ int perform_move(board_state* state, board_move* move) {
     } else {
         state->black |= move->to;
         state->white &= ~move->to;
+        //update full moves
+        state->full_moves++;
+    }
+    
+    //update half moves
+    if (piece_type == PAWN || to_player != 0) {
+        //reset on pawn move or if a piece is taken
+        state->half_moves = 0;
+    } else {
+        state->half_moves++;
     }
 
     //update player
@@ -421,3 +506,31 @@ void print_binary(__uint64_t value) {
     printf("\n");
 }
 
+
+
+int evaluate_board_state(board_state* state) {
+    int value = 0;
+    for (int i = 0; i < 6; i++) {
+        //get pieces of both players
+        __uint64_t white = state->pieces[i] & state->white;
+        __uint64_t black = state->pieces[i] & state->black;
+        int count = 0;
+
+        //count white pieces
+        while (white)
+        {
+            white &= white - 1;
+            count++;
+        }
+
+        //simply substract the piece count of black
+        while (black)
+        {
+            black &= black - 1;
+            count--;
+        }
+
+        value += count * PIECE_VALUES[i];
+    }
+    return value;
+}
