@@ -237,13 +237,13 @@ int perform_move(board_state* state, board_move* move) {
     //update player
     state->player *= -1;
 
-    /*
+    
     //Nicht löschen, brauche noch!
     int pt = ROOK;
     __uint64_t test = get_all_possible_moves(pt, move->from);
     print_binary(test);
     printf("\n");
-    */
+    
 
     return 0; //move successful
 }
@@ -282,6 +282,7 @@ __uint64_t get_all_possible_moves(int piecetype, __uint64_t f) {
         //possible_moves = knight_movement(f, 0ULL);
         return possible_moves;
     case ROOK:
+        possible_moves |= straight_movement(f, 0ULL);
         return possible_moves;
     case QUEEN:
         possible_moves |= diagonal_movement(f, 0ULL) | straight_movement(f, 0ULL);
@@ -352,8 +353,8 @@ __uint64_t straight_movement(__uint64_t position, __uint64_t occupied) {
     __uint64_t possible_moves = 0;
     __uint64_t top = 0xFF00000000000000;
     __uint64_t bottom = 0x00000000000000FF;
-    __uint64_t left = 0x0101010101010101;
-    __uint64_t right = 0x8080808080808080;
+    __uint64_t left = 0x8080808080808080;
+    __uint64_t right = 0x0101010101010101;
     __uint64_t mask;
     int row = get_row(position); // Zeile
     int col = get_col(position); // Spalte
