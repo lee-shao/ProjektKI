@@ -324,7 +324,7 @@ int perform_move(board_state* state, board_move* move) {
 
     /*
     //Nicht löschen, brauche noch!
-    int pt = KING;
+    int pt = KNIGHT;
     __uint64_t test = get_all_possible_moves(pt, move->from);
     printf("%" PRIu64 "\n", move->from);
     print_binary(test);
@@ -362,16 +362,16 @@ __uint64_t get_all_possible_moves(int piecetype, __uint64_t f) {
         }
         return possible_moves;
     case BISHOP:
-        possible_moves |= diagonal_movement(f, 0ULL);
+        possible_moves |= diagonal_movement(f, 0);
         return possible_moves;
     case KNIGHT:
-        //possible_moves = knight_movement(f, 0ULL);
+        possible_moves = knight_movement(f, 0);
         return possible_moves;
     case ROOK:
-        possible_moves |= straight_movement(f, 0ULL);
+        possible_moves |= straight_movement(f, 0);
         return possible_moves;
     case QUEEN:
-        possible_moves |= diagonal_movement(f, 0ULL) | straight_movement(f, 0ULL);
+        possible_moves |= diagonal_movement(f, 0) | straight_movement(f, 0);
         return possible_moves;
     case KING:
         // If the king is at the left/right border
@@ -390,7 +390,6 @@ __uint64_t get_all_possible_moves(int piecetype, __uint64_t f) {
 
 /**
  * Diese Funktion berechnet ausgehend von einer Position alle diagonal erreichbaren Felder bis zum Spielbrettrand. 
- * Dafür werden 2 Diagonale an die Position der Figur verschoben, um die Felder abzudecken, die die Figur in 4 Richtungen laufen kann. 
  * TODO: In occupied kann ein 64-Bitboard gespeichert werden, wo bereits Figuren stehen.
  * Das Invertierte Bitboard von occupied kann dann verUNDed werden um besetzte Felder auszuschließen. 
  * @author Shao
@@ -403,19 +402,19 @@ __uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied) {
     
     //links oben
     for (i = 1; row - i >= 0 && col - i >= 0; i++) {
-        possible_moves |= 1ULL << ((row - i) * 8 + (col - i));
+        possible_moves |= 1 << ((row - i) * 8 + (col - i));
     }
     //rechts oben
     for (i = 1; row - i >= 0 && col + i < 8; i++) {
-        possible_moves |= 1ULL << ((row - i) * 8 + (col + i));
+        possible_moves |= 1 << ((row - i) * 8 + (col + i));
     }
     //links unten
     for (i = 1; row + i < 8 && col - i >= 0; i++) {
-        possible_moves |= 1ULL << ((row + i) * 8 + (col - i));
+        possible_moves |= 1 << ((row + i) * 8 + (col - i));
     }
     //rechts unten
     for (i = 1; row + i < 8 && col + i < 8; i++) {
-        possible_moves |= 1ULL << ((row + i) * 8 + (col + i));
+        possible_moves |= 1 << ((row + i) * 8 + (col + i));
     }
 
     return possible_moves;
@@ -430,11 +429,11 @@ __uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied) {
 */
 __uint64_t straight_movement(__uint64_t position, __uint64_t occupied) {
     __uint64_t possible_moves = 0;
-    __uint64_t top = 0xFF00000000000000ULL;
-    __uint64_t bottom = 0x00000000000000FFULL;
-    __uint64_t left = 0x0101010101010101ULL;
-    __uint64_t right = 0x8080808080808080ULL;
-    __uint64_t mask = 1ULL << position;
+    __uint64_t top = 0xFF00000000000000;
+    __uint64_t bottom = 0x00000000000000FF;
+    __uint64_t left = 0x0101010101010101;
+    __uint64_t right = 0x8080808080808080;
+    __uint64_t mask = 1 << position;
     int row = get_row(position); // Zeile
     int col = get_col(position); // Spalte
 
@@ -458,30 +457,38 @@ __uint64_t straight_movement(__uint64_t position, __uint64_t occupied) {
 
 
 /**
- * Bitmaske für den Springer
- * 
+ * Bewegungsmuster für den Springer
 */
-/*
 __uint64_t knight_movement(__uint64_t position, __uint64_t occupied) {
     __uint64_t possible_moves = 0;
-    __uint64_t mask;
-    __uint64_t tmp = position;
-    int row = get_row(position);
-    int col = get_col(position);
+    //int row = get_row(position);
+    //int col = get_col(position);
 
-    return 0; //possible_moves;
+    return possible_moves;
 }
+
+/**
+ * Hilfsfunktion zum Überprüfen ob eine Position auf dem Brett liegt.
 */
+int insideBoardBounds(int x, int y) {
+    if (x >= 0 && x < 8)
+        if (y >= 0 && y < 8)
+            return 1;
+        else
+            return 0;
+    else 
+        return 0;
+}
 
 int get_row(__uint64_t position) {
     int row = log2(position) /8;
-    printf("Zeile: %i\n", row);
+    //printf("Zeile: %i\n", row);
     return row;
 }
 
 int get_col(__uint64_t position) {
     int col = (int) log2(position) % 8;
-    printf("Spalte: %i\n", col);
+    //printf("Spalte: %i\n", col);
     return col;
 }
 

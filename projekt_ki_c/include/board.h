@@ -96,6 +96,11 @@ __uint64_t straight_movement(__uint64_t position, __uint64_t occupied);
 __uint64_t knight_movement(__uint64_t position, __uint64_t occupied);
 
 /**
+ * 
+*/
+int insideBoardBounds(int x, int y);
+
+/**
  *
 */
 int get_row(__uint64_t position);
