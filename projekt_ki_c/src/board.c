@@ -1,6 +1,8 @@
 #include "board.h"
 #include <inttypes.h>
 #include <math.h>
+#include <inttypes.h>
+#include <math.h>
 
 const char PIECE_CHARS[] = {'P', 'B', 'N', 'R', 'Q', 'K'};
 const int PIECE_VALUES[] = {10, 30, 30, 50, 90, 20000};
