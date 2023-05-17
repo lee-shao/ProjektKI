@@ -492,14 +492,11 @@ __uint64_t straight_movement(__uint64_t position, __uint64_t occupied) {
     return possible_moves;
 }
 
-
 /**
  * Bewegungsmuster für den Springer
 */
 __uint64_t knight_movement(__uint64_t position, __uint64_t occupied) {
     __uint64_t possible_moves = 0;
-    //int row = get_row(position);
-    //int col = get_col(position);
 
     // 2 Felder erreichbar
 
