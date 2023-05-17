@@ -1,4 +1,6 @@
 #include "board.h"
+#include <inttypes.h>
+#include <math.h>
 
 const char PIECE_CHARS[] = {'P', 'B', 'N', 'R', 'Q', 'K'};
 const int PIECE_VALUES[] = {10, 30, 30, 50, 90, 20000};
@@ -320,7 +322,188 @@ int perform_move(board_state* state, board_move* move) {
     //update player
     state->player *= -1;
 
+    /*
+    //Nicht löschen, brauche noch!
+    int pt = KNIGHT;
+    __uint64_t test = get_all_possible_moves(pt, move->from);
+    printf("%" PRIu64 "\n", move->from);
+    print_binary(test);
+    printf("\n");
+    */
+
     return 0; //move successful
+}
+
+/**
+ * Diese Funktion berechnet für eine beliebige Figur das Bewegungsmuster und gibt diese in einem Bitboard aus
+ * @param piecetype Gibt den Figurentyp an, für den das Bewegungsmuster berechnet werden soll
+ * @param move enthält die Position, auf die sich die Figur befindet
+ * @return Gibt das Bewegungsmusters einer Figur als ein 64-Bit-Integer aus
+ * @author Shao
+*/
+__uint64_t get_all_possible_moves(int piecetype, __uint64_t f) {
+    __uint64_t possible_moves = 0;
+    __uint64_t a_col = 0x7F7F7F7F7F7F7F7F;
+    __uint64_t h_col = 0xFEFEFEFEFEFEFEFE;
+
+    switch (piecetype)
+    {
+    /**
+    * Either pawn is at left/right border or between
+    * TODO: extra rules (attacking, double step, promotion, en-passant)
+    */
+    case 0:
+        if (f & ~a_col) {
+            possible_moves |= f<<8 | f<<7;
+        } else if (f & ~h_col) {
+            possible_moves |= f<<9 | f<<8;
+        } else {
+            possible_moves |= f<<9 | f<<8 | f<<7;
+        }
+        return possible_moves;
+    case BISHOP:
+        possible_moves |= diagonal_movement(f, 0);
+        return possible_moves;
+    case KNIGHT:
+        possible_moves = knight_movement(f, 0);
+        return possible_moves;
+    case ROOK:
+        possible_moves |= straight_movement(f, 0);
+        return possible_moves;
+    case QUEEN:
+        possible_moves |= diagonal_movement(f, 0) | straight_movement(f, 0);
+        return possible_moves;
+    case KING:
+        // If the king is at the left/right border
+        if (f & ~a_col) {
+            possible_moves |= f<<7 | f<<8 | f>>1 | f>>8 | f>> 9;
+        } else if (f & ~h_col) {
+            possible_moves |= f<<9 | f<<8 | f<<1 | f>>8 | f>> 7;
+        } else {
+            possible_moves |= f<<9 | f<<8 | f<<7 | f<<1 | f>>1 | f>>7 | f>>8 | f>>9;
+        }
+        return possible_moves;
+    default:
+        return -1; //invalid piecetype
+    }
+}
+
+/**
+ * Diese Funktion berechnet ausgehend von einer Position alle diagonal erreichbaren Felder bis zum Spielbrettrand. 
+ * TODO: In occupied kann ein 64-Bitboard gespeichert werden, wo bereits Figuren stehen.
+ * Das Invertierte Bitboard von occupied kann dann verUNDed werden um besetzte Felder auszuschließen. 
+ * @author Shao
+*/
+__uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied) {
+    __uint64_t possible_moves = 0;
+    int row = get_row(position); // Zeile
+    int col = get_col(position); // Spalte
+    int i = 0;
+    
+    //links oben
+    for (i = 1; row - i >= 0 && col - i >= 0; i++) {
+        possible_moves |= 1 << ((row - i) * 8 + (col - i));
+    }
+    //rechts oben
+    for (i = 1; row - i >= 0 && col + i < 8; i++) {
+        possible_moves |= 1 << ((row - i) * 8 + (col + i));
+    }
+    //links unten
+    for (i = 1; row + i < 8 && col - i >= 0; i++) {
+        possible_moves |= 1 << ((row + i) * 8 + (col - i));
+    }
+    //rechts unten
+    for (i = 1; row + i < 8 && col + i < 8; i++) {
+        possible_moves |= 1 << ((row + i) * 8 + (col + i));
+    }
+
+    return possible_moves;
+}
+
+/**
+ * Diese Funktion berechnet ausgehend von einer Position alle gerade erreichbaren Felder bis zum Spielbrettrand. 
+ * Dafür werden Geraden an die Position der Figur verschoben, um die Felder abzudecken, die die Figur in 4 Richtungen laufen kann. 
+ * TODO: In occupied kann ein 64-Bitboard gespeichert werden, wo bereits Figuren stehen.
+ * Das Invertierte Bitboard von occupied kann dann verUNDed werden um besetzte Felder auszuschließen. 
+ * @author Shao
+*/
+__uint64_t straight_movement(__uint64_t position, __uint64_t occupied) {
+    __uint64_t possible_moves = 0;
+    __uint64_t top = 0xFF00000000000000;
+    __uint64_t bottom = 0x00000000000000FF;
+    __uint64_t left = 0x0101010101010101;
+    __uint64_t right = 0x8080808080808080;
+    __uint64_t mask = 1 << position;
+    int row = get_row(position); // Zeile
+    int col = get_col(position); // Spalte
+
+    //top
+    mask = (top >> (8 * (7 - row))); //& ~occupied;
+    possible_moves |= mask; // << (8 * (7 - row));
+    //bottom
+    mask = (bottom << (8 * row)); //& ~occupied;
+    possible_moves |= mask; // << (8 * row);
+    //left
+    mask = (left << col); //& ~occupied;
+    possible_moves |= mask; // << col;
+    //right
+    mask = (right >> (7 - col)); //~occupied;
+    possible_moves |= mask;// << col;
+
+    possible_moves &= ~position;
+
+    return possible_moves;
+}
+
+
+/**
+ * Bewegungsmuster für den Springer
+*/
+__uint64_t knight_movement(__uint64_t position, __uint64_t occupied) {
+    __uint64_t possible_moves = 0;
+    //int row = get_row(position);
+    //int col = get_col(position);
+
+    return possible_moves;
+}
+
+/**
+ * Hilfsfunktion zum Überprüfen ob eine Position auf dem Brett liegt.
+*/
+int insideBoardBounds(int x, int y) {
+    if (x >= 0 && x < 8)
+        if (y >= 0 && y < 8)
+            return 1;
+        else
+            return 0;
+    else 
+        return 0;
+}
+
+int get_row(__uint64_t position) {
+    int row = log2(position) /8;
+    //printf("Zeile: %i\n", row);
+    return row;
+}
+
+int get_col(__uint64_t position) {
+    int col = (int) log2(position) % 8;
+    //printf("Spalte: %i\n", col);
+    return col;
+}
+
+void print_binary(__uint64_t value) {
+    int row, col = 0;
+
+    for (row = 7; row >= 0; row--) {
+        printf("%i | ", row +1);
+        for (col = 0; col < 8; col++) {
+            __uint64_t bit = (value >> (row * 8 + col)) & 1;
+            printf("%lu ", bit);
+        }
+        printf("\n");
+    }
+    printf("  | A B C D E F G H \n");
 }
 
 int evaluate_board_state(board_state* state) {

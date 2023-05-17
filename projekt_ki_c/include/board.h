@@ -75,6 +75,46 @@ board_move* fen_to_move(char *fen, board_state *state);
  */
 int perform_move(board_state* state, board_move* move);
 
+/**
+ * 
+*/
+__uint64_t get_all_possible_moves(int piecetype, __uint64_t f);
+
+/**
+ * 
+*/
+__uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied);
+
+/**
+ * 
+*/
+__uint64_t straight_movement(__uint64_t position, __uint64_t occupied);
+
+/**
+ * 
+*/
+__uint64_t knight_movement(__uint64_t position, __uint64_t occupied);
+
+/**
+ * 
+*/
+int insideBoardBounds(int x, int y);
+
+/**
+ *
+*/
+int get_row(__uint64_t position);
+
+/**
+ * 
+*/
+int get_col(__uint64_t position);
+
+/**
+ * 
+*/
+void print_binary(__uint64_t value);
+
 /*
  * Evaluates given board state
  * if positive white is in advantage. if negative black is in advantage
