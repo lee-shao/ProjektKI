@@ -182,6 +182,12 @@ char* board_to_fen(board_state* state) {
     return NULL;
 }
 
+board_state* clone_board_state(board_state* state) {
+    board_state *cloned_state = malloc(sizeof(board_state));
+    memcpy(cloned_state, state, sizeof(board_state));
+    return cloned_state;
+}
+
 int get_piece_from_fen(char fen) {
     switch (toupper(fen))
     {
@@ -369,6 +375,20 @@ int perform_move(board_state* state, board_move* move) {
     */
 
     return 0; //move successful
+}
+
+__uint64_t get_possible_moves_in_state(board_state* state, int piecetype, __uint64_t from) {
+    //TODO: implement
+    __uint64_t moves = get_all_possible_moves(piecetype, from);
+
+    //filter moves where the target pos already contain a piece of curr player
+    if (state->player == 1) {
+        moves &= ~state->white;
+    } else {
+        moves &= ~state->black;
+    }
+
+    return moves;
 }
 
 /**
@@ -662,4 +682,41 @@ int evaluate_board_state(board_state* state) {
         value += count * PIECE_VALUES[i];
     }
     return value;
+}
+
+void print_moves_of_piece(board_state* state, int type, __uint64_t pos) {
+    __uint64_t combined_board;
+    if (state->player == 1) {
+        combined_board = state->pieces[type] & state->white;
+    } else {
+        combined_board = state->pieces[type] & state->black;
+    }
+    if (pos == 0) {
+        //no position given. print all
+        //loop through bits
+        __uint64_t moves = 0;
+        for (int bit = 0; bit < 64; bit++) {
+            if ((combined_board >> bit) & 1) {
+                //get and loop trough all valid moves
+                moves = get_possible_moves_in_state(state, type, (__uint64_t)1 << bit);
+                //board_move* move = malloc(sizeof(board_move));
+                for (int m_bit = 0; m_bit < 64; m_bit++) {
+                    if ((moves >> m_bit) & 1) {
+                        printf("%s %s,", uint_pos_to_fen((__uint64_t)1 << bit), uint_pos_to_fen((__uint64_t)1 << m_bit));
+                    }
+                }
+            }
+        }
+    } else {
+        //print moves of given position
+        //get and loop trough all valid moves
+        __uint64_t moves = get_possible_moves_in_state(state, type, pos);
+        //board_move* move = malloc(sizeof(board_move));
+        for (int m_bit = 0; m_bit < 64; m_bit++) {
+            if ((moves >> m_bit) & 1) {
+                printf("%s,", uint_pos_to_fen((__uint64_t)1 << m_bit));
+            }
+        }
+    }
+    printf("\n");
 }
