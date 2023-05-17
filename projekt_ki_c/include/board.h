@@ -9,6 +9,13 @@ enum pieces {PAWN = 0, BISHOP, KNIGHT, ROOK, QUEEN, KING};
 extern const char PIECE_CHARS[];
 extern const int PIECE_VALUES[];
 
+extern const int LOG264_TAB[64];
+
+/*
+ * Uses a table to improve performance
+ */
+int log2_64 (__uint64_t value);
+
 /*
  * stores the pieces positions on the board
  * pieces: bitboards to store the pieces. Use enum pieces as index
@@ -69,6 +76,16 @@ __int8_t get_player_from_fen(char fen);
  * Converts a fen move string to a board_move
  */
 board_move* fen_to_move(char *fen, board_state *state);
+
+/*
+ * converts fen coords (e.g "e4" to a uint64)
+ */
+__uint64_t fen_pos_to_uint(char* pos, int start_index);
+
+/*
+ * converts a uint64 pos to fen
+ */
+char* uint_pos_to_fen(__uint64_t pos);
 
 /*
  * performs specified move
