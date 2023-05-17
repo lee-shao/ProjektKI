@@ -7,6 +7,28 @@
 const char PIECE_CHARS[] = {'P', 'B', 'N', 'R', 'Q', 'K'};
 const int PIECE_VALUES[] = {10, 30, 30, 50, 90, 20000};
 
+const int LOG264_TAB[64] = {
+    63,  0, 58,  1, 59, 47, 53,  2,
+    60, 39, 48, 27, 54, 33, 42,  3,
+    61, 51, 37, 40, 49, 18, 28, 20,
+    55, 30, 34, 11, 43, 14, 22,  4,
+    62, 57, 46, 52, 38, 26, 32, 41,
+    50, 36, 17, 19, 29, 10, 13, 21,
+    56, 45, 25, 31, 35, 16,  9, 12,
+    44, 24, 15,  8, 23,  7,  6,  5
+};
+
+int log2_64 (__uint64_t value)
+{
+    value |= value >> 1;
+    value |= value >> 2;
+    value |= value >> 4;
+    value |= value >> 8;
+    value |= value >> 16;
+    value |= value >> 32;
+    return LOG264_TAB[((__uint64_t)((value - (value >> 1))*0x07EDD5E59A4E28C2)) >> 58];
+}
+
 void print_board(board_state* pos) {
     printf(" | A| B| C| D| E| F| G| H|\n8|");
     for (int i = 0; i < 64; i++) {
@@ -252,6 +274,19 @@ board_move* fen_to_move(char *fen, board_state *state) {
     move->piece = piece_type;
 
     return move;
+}
+
+__uint64_t fen_pos_to_uint(char* pos, int start_index) {
+    return (__uint64_t)1 << ((toupper(pos[start_index]) - 'A') + (pos[start_index + 1] - '1') * 8);
+}
+
+char* uint_pos_to_fen(__uint64_t pos) {
+    int bit_pos = log2(pos);
+    char* ret = malloc(3 * sizeof(char)); //return value is 2 chars
+    ret[0] = bit_pos % 8 + 'a'; //x
+    ret[1] = bit_pos / 8 + '1'; //y
+    ret[2] = 0;                 //end of string
+    return ret;
 }
 
 int perform_move(board_state* state, board_move* move) {
