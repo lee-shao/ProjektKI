@@ -324,7 +324,7 @@ int perform_move(board_state* state, board_move* move) {
 
     /*
     //Nicht löschen, brauche noch!
-    int pt = KNIGHT;
+    int pt = PAWN;
     __uint64_t test = get_all_possible_moves(pt, move->from);
     printf("%" PRIu64 "\n", move->from);
     print_binary(test);
@@ -464,20 +464,106 @@ __uint64_t knight_movement(__uint64_t position, __uint64_t occupied) {
     //int row = get_row(position);
     //int col = get_col(position);
 
-    return possible_moves;
-}
+    // 2 Felder erreichbar
 
-/**
- * Hilfsfunktion zum Überprüfen ob eine Position auf dem Brett liegt.
-*/
-int insideBoardBounds(int x, int y) {
-    if (x >= 0 && x < 8)
-        if (y >= 0 && y < 8)
-            return 1;
-        else
-            return 0;
-    else 
-        return 0;
+    // h8
+    if (position & 0x8000000000000000)
+        possible_moves |= position >> 10 | position >> 17;
+    // a8
+    if (position & 0x0100000000000000)
+        possible_moves |= position >> 6 | position << 15;
+    // h1
+    if (position & 0x0000000000000080)
+        possible_moves |= position << 15 | position << 6;
+    // a1
+    if (position & 0x0000000000000001)
+        possible_moves |= position << 10 | position << 17;
+
+    // 3 Felder erreichbar
+
+    // b8 und g8
+    if (position & 0x4000000000000000 || position & 0x0200000000000000) {
+        possible_moves |= position >> 17 | position >> 15;
+        if (position & 0x4000000000000000) {
+            possible_moves |= position >> 10;
+        }
+        if (position & 0x0200000000000000) {
+            possible_moves |= position >> 6;
+        }
+    }
+    // h7 und h2
+    if (position & 0x0080000000000000 || position & 0x0000000000008000) {
+        possible_moves |= position << 6 | position >> 10;
+        if (position & 0x0080000000000000)
+            possible_moves |= position >> 17;
+        if (position & 0x0000000000008000)
+            possible_moves |= position << 15;
+    }
+    // a7 und a2
+    if (position & 0x0001000000000000 || position & 0x0000000000000100) {
+        possible_moves |= position << 10 | position >> 6;
+        if (position & 0x0001000000000000)
+            possible_moves |= position >> 15;
+        if (position & 0x0000000000000100)
+            possible_moves |= position << 17;
+    }
+    // g1 und b1
+    if ((position & 0x0000000000000040) || (position & 0x0000000000000002)) {
+        possible_moves |= position << 15 | position << 17;
+        if (position & 0x0000000000000040)
+            possible_moves |= position << 6;
+        if (position & 0x0000000000000002)
+            possible_moves |= position << 10; 
+    }
+
+    // 4 Felder erreichbar
+
+    // c8, d8, e8, f8
+    if (position & 0x3C00000000000000)
+        possible_moves |= position >> 6 | position >> 10 | position >> 15 | position >> 17;
+    // h6, h5, h4, h3
+    if (position & 0x0000808080800000)
+        possible_moves |= position << 15 | position << 6 | position >> 10 | position >> 17;
+    // a6, a5, a4, a3
+    if (position & 0x0000010101010000)
+        possible_moves |= position << 17 | position << 10 | position >> 6 | position >> 15;
+    // c1, d1, e1, f1
+    if (position & 0x000000000000003C)
+        possible_moves |= position >> 6 | position >> 10 | position >> 15 | position >> 17;
+    // g7
+    if (position & 0x0040000000000000)
+        possible_moves |= position << 6 | position >> 10 | position >> 17 | position >> 15;
+    // b7
+    if (position & 0x0002000000000000)
+        possible_moves |= position << 10 | position >> 6 | position >> 15 | position >> 17;
+    // g2
+    if (position & 0x0000000000004000)
+        possible_moves |= position << 17 | position << 15 | position << 6 | position >> 10;
+    // b2
+    if (position & 0x0000000000000200)
+        possible_moves |= position << 15 | position << 17 | position << 10 | position >> 6;
+
+    // 6 Felder erreichbar
+
+    // c7, d7, e7, f7
+    if (position & 0x003C000000000000)
+        possible_moves |= position << 6 | position << 10 | position >> 10 | position >> 6 | position >> 17 | position >> 15;
+    // g6, g5, g4, g3
+    if (position & 0x0000404040400000)
+        possible_moves |= position << 17 | position << 15 | position << 6 | position >> 10 | position >> 17 | position >> 15;
+    // b6, b5, b4, b3
+    if (position & 0x0000020202020000)
+        possible_moves |= position << 17 | position << 15 | position << 10 | position >> 6 | position >> 15 | position >> 17;
+    // c2, d2, e2, f2
+    if (position & 0x003C000000000000)
+        possible_moves |= position << 17 | position << 15 | position << 10 | position << 6 | position >> 10 | position >> 6;
+
+    // 8 Felder erreichbar
+
+    if (position & 0x00003C3C3C3C0000)
+        possible_moves |= position << 17 | position << 15 | position << 10 | position << 6 | position >> 6 | position >> 10| position >> 15 | position >> 17;
+
+    return possible_moves;
 }
 
 int get_row(__uint64_t position) {
