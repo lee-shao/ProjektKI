@@ -626,6 +626,17 @@ void print_binary(__uint64_t value) {
     printf("  | A B C D E F G H \n");
 }
 
+int check_king(__uint64_t king,  board_state* board){ //own king; board
+    //get all moves from the enemy and check, if any of those can target the king's pos
+    int r = get_row(king); //zeile
+    int c = get_col(king); //spalte
+    //get all pawns of opp_side
+    __uint64_t fig;
+    for(int i=0; i<=5;i++){
+        // pawn board & opponent(black) board
+    }
+}
+
 int evaluate_board_state(board_state* state) {
     int value = 0;
     for (int i = 0; i < 6; i++) {
