@@ -4,6 +4,10 @@
 #include <inttypes.h>
 #include <math.h>
 
+#define get_LSB(b) (builtin_ctzll(b))
+#define get_bit(bitboard, square) (bitboard & ((__uint64_t)1 << square))
+#define pop_bit(bitboard, square) (get_bit(bitboard, square) ? bitboard ^= ((__uint64_t)1 << square) : 0)
+
 const char PIECE_CHARS[] = {'P', 'B', 'N', 'R', 'Q', 'K'};
 const int PIECE_VALUES[] = {10, 30, 30, 50, 90, 20000};
 
@@ -626,7 +630,73 @@ void print_binary(__uint64_t value) {
     printf("  | A B C D E F G H \n");
 }
 
-/**/
+uint64_t pop_LSB(uint64_t *b){
+    uint64_t trailing_zeros = get_LSB(*b);
+    pop_bit(*b,trailing_zeros);
+    return 1 << trailing_zeros;
+}
+
+
+__uint64_t check_king(board_state* board){ //own king; board
+    //get all moves from the enemy and check, if any of those can target the king's pos
+    __uint64_t opp, own; // opponent and own board
+    __uint64_t ret = 0;
+    if (board->player ==1)
+    {
+        opp = board->black;
+        own = board->white;
+    }
+    else{
+        opp = board->white;
+        own = board->black;
+    }
+    
+
+    __uint64_t king = board->pieces[5] & own;
+
+    int r = get_row(king); //zeile
+    int c = get_col(king); //spalte
+    //get all pawns of opp_side
+    
+    for(int i=0; i<=5;i++){
+        __uint64_t figboard = board->pieces[i] & opp;
+        for(__uint64_t fig = fig= pop_LSB( &figboard ); fig != 0; fig= pop_LSB( &figboard ))//pop the position of the piece on the lsb 
+        {
+            switch (i)
+            {
+            case 'P':
+                 //check if col is right and left of king, else skip 
+                 int cf = get_col(fig);
+                 int rf = get_row(fig);
+                if (cf -1 == c || cf +1 == c)
+                {   // add the fig to ret, to mark which pieces are putting the king to check
+                    if (board->player == 1 && rf+1  == r) ret &= fig;
+                    else if (rf-1  == r){ret &= fig;}
+                }
+                break;
+            case 'B':
+                
+                break;
+            case 'N':
+                
+                break;
+            case 'R':
+                
+                break;
+            case 'Q':
+                
+                break;
+            case 'K':
+                //no need to check this one cuz it's our turn and we could just take the king then
+                break;
+            default:
+                break; //invalid char
+            }
+        }
+        
+    }
+    return ret;
+}
 
 int evaluate_board_state(board_state* state) {
     int value = 0;
