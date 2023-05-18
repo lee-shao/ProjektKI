@@ -439,21 +439,45 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
         }
         if (f & ~a_col) {
             if (state->player == 1) {
-                possible_moves |= f << 8 | f << 7;
-            } else {
-                possible_moves |= f >> 8 | f >> 9;
+                possible_moves |= f << 8;
+                if (f << 7 & state->black) {
+                    possible_moves |= f << 7;
+                }
+            } else if (state->player == -1) {
+                possible_moves |= f >> 8;
+                if (f >> 9 & state->white) {
+                    possible_moves |= f >> 9;
+                }
             }
         } else if (f & ~h_col) {
             if (state->player == 1) {
-                possible_moves |= f << 9 | f << 8;
-            } else {
-                possible_moves |= f >> 8 | f >> 7;
+                possible_moves |= f << 8;
+                if (f << 9 & state->black) {
+                    possible_moves |= f << 9;
+                }
+            } else if (state->player == -1) {
+                possible_moves |= f >> 8;
+                if (f >> 7 & state->black) {
+                    possible_moves |= f >> 7;
+                }
             }
         } else {
             if (state->player == 1) {
-                possible_moves |= f << 9 | f << 8 | f << 7;
-            } else {
-                possible_moves |= f >> 9 | f >> 8 | f >> 7;
+                possible_moves |= f << 8;
+                if (f << 9 & state->black) {
+                    possible_moves |= f << 9;
+                }
+                if (f << 7 & state->black) {
+                    possible_moves |= f << 7;
+                }
+            } else if (state->player == -1) {
+                possible_moves |= f >> 8;
+                if (f >> 9 & state->black) {
+                    possible_moves |= f >> 9;
+                }
+                if (f >> 7 & state->black) {
+                    possible_moves |= f >> 7;
+                }
             }
         }
         possible_moves = filter_occupied_moves(state, possible_moves);
@@ -512,7 +536,7 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
 __uint64_t diagonal_movement(__uint64_t position, board_state* state) {
     __uint64_t possible_moves = 0;
     __uint64_t new_field = 0;
-    __uint64_t occupied = state->white & state->black;
+    __uint64_t occupied = state->white | state->black;
     int row = get_row(position); // Zeile
     int col = get_col(position); // Spalte
     int i = 0;
@@ -548,6 +572,7 @@ __uint64_t diagonal_movement(__uint64_t position, board_state* state) {
             if ((state->player == 1 && new_field & state->black) || (state->player == -1 && new_field & state->white)) {
                 possible_moves |= new_field;
             }
+            break;
         } else {
             possible_moves |= new_field;
         }
@@ -578,7 +603,7 @@ __uint64_t diagonal_movement(__uint64_t position, board_state* state) {
 __uint64_t straight_movement(__uint64_t position, board_state* state) {
     __uint64_t possible_moves = 0;
     __uint64_t new_field = 0;
-    __uint64_t occupied = state->white & state->black;
+    __uint64_t occupied = state->white | state->black;
     int row = get_row(position); // Zeile
     int col = get_col(position); // Spalte
     int i = 0;
@@ -587,7 +612,7 @@ __uint64_t straight_movement(__uint64_t position, board_state* state) {
     for (i = 1; row + i < 8; i++) {
         new_field = (__uint64_t) 1 << ((row + i) * 8 + col);
         if (new_field & occupied) {
-            if ((state->player == 1 && new_field & state->black) || (state->player == -1 && new_field & state->white)) {
+            if (((state->player == 1) && (new_field & state->black)) || (state->player == -1 && new_field & state->white)) {
                 possible_moves |= new_field;
             }
             break;
