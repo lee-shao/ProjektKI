@@ -182,12 +182,6 @@ char* board_to_fen(board_state* state) {
     return NULL;
 }
 
-board_state* clone_board_state(board_state* state) {
-    board_state *cloned_state = malloc(sizeof(board_state));
-    memcpy(cloned_state, state, sizeof(board_state));
-    return cloned_state;
-}
-
 int get_piece_from_fen(char fen) {
     switch (toupper(fen))
     {
@@ -375,20 +369,6 @@ int perform_move(board_state* state, board_move* move) {
     */
 
     return 0; //move successful
-}
-
-__uint64_t get_possible_moves_in_state(board_state* state, int piecetype, __uint64_t from) {
-    //TODO: implement
-    __uint64_t moves = get_all_possible_moves(piecetype, from);
-
-    //filter moves where the target pos already contain a piece of curr player
-    if (state->player == 1) {
-        moves &= ~state->white;
-    } else {
-        moves &= ~state->black;
-    }
-
-    return moves;
 }
 
 /**
