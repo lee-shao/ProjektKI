@@ -365,15 +365,6 @@ int perform_move(board_state* state, board_move* move) {
     //update player
     state->player *= -1;
 
-    /*
-    //Nicht löschen, brauche noch!
-    int pt = PAWN;
-    __uint64_t test = get_all_possible_moves(pt, move->from);
-    printf("%" PRIu64 "\n", move->from);
-    print_binary(test);
-    printf("\n");
-    */
-
     return 0; //move successful
 }
 
