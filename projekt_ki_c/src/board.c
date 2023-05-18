@@ -368,20 +368,6 @@ int perform_move(board_state* state, board_move* move) {
     return 0; //move successful
 }
 
-__uint64_t get_possible_moves_in_state(board_state* state, int piecetype, __uint64_t from) {
-    //TODO: implement
-    __uint64_t moves = get_all_possible_moves(piecetype, from);
-
-    //filter moves where the target pos already contain a piece of curr player
-    if (state->player == 1) {
-        moves &= ~state->white;
-    } else {
-        moves &= ~state->black;
-    }
-
-    return moves;
-}
-
 /**
  * Diese Funktion berechnet für eine beliebige Figur das Bewegungsmuster und gibt diese in einem Bitboard aus
  * @param piecetype Gibt den Figurentyp an, für den das Bewegungsmuster berechnet werden soll
@@ -389,7 +375,7 @@ __uint64_t get_possible_moves_in_state(board_state* state, int piecetype, __uint
  * @return Gibt das Bewegungsmusters einer Figur als ein 64-Bit-Integer aus
  * @author Shao
 */
-__uint64_t get_all_possible_moves(int piecetype, __uint64_t f) {
+__uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t f) {
     __uint64_t possible_moves = 0;
     __uint64_t a_col = 0x7F7F7F7F7F7F7F7F;
     __uint64_t h_col = 0xFEFEFEFEFEFEFEFE;
@@ -402,24 +388,54 @@ __uint64_t get_all_possible_moves(int piecetype, __uint64_t f) {
     */
     case 0:
         if (f & ~a_col) {
-            possible_moves |= f<<8 | f<<7;
+            if (state->player == 1) {
+                possible_moves |= f << 8 | f << 7;
+            } else {
+                possible_moves |= f >> 8 | f >> 9;
+            }
         } else if (f & ~h_col) {
-            possible_moves |= f<<9 | f<<8;
+            if (state->player == 1) {
+                possible_moves |= f << 9 | f << 8;
+            } else {
+                possible_moves |= f >> 8 | f >> 7;
+            }
         } else {
-            possible_moves |= f<<9 | f<<8 | f<<7;
+            if (state->player == 1) {
+                possible_moves |= f << 9 | f << 8 | f << 7;
+            } else {
+                possible_moves |= f >> 9 | f >> 8 | f >> 7;
+            }
         }
+        possible_moves = filter_occupied_moves(state, possible_moves);
         return possible_moves;
     case BISHOP:
-        possible_moves |= diagonal_movement(f, 0);
+        if (state->player == 1) {
+            possible_moves |= diagonal_movement(f, state->white);
+        } else {
+            possible_moves |= diagonal_movement(f, state->black);
+        }
         return possible_moves;
     case KNIGHT:
-        possible_moves = knight_movement(f, 0);
+        if (state->player == 1) {
+            possible_moves = knight_movement(f, state->white);
+        } else {
+            possible_moves = knight_movement(f, state->black);
+        }
+        possible_moves = filter_occupied_moves(state, possible_moves);
         return possible_moves;
     case ROOK:
-        possible_moves |= straight_movement(f, 0);
+        if (state->player == 1) {
+            possible_moves = straight_movement(f, state->white);
+        } else {
+            possible_moves |= straight_movement(f, state->black);
+        }
         return possible_moves;
     case QUEEN:
-        possible_moves |= diagonal_movement(f, 0) | straight_movement(f, 0);
+        if (state->player == 1) {
+            possible_moves |= diagonal_movement(f, state->white) | straight_movement(f, state->white);
+        } else {
+            possible_moves |= diagonal_movement(f, state->black) | straight_movement(f, state->black);
+        }
         return possible_moves;
     case KING:
         // If the king is at the left/right border
@@ -430,6 +446,7 @@ __uint64_t get_all_possible_moves(int piecetype, __uint64_t f) {
         } else {
             possible_moves |= f<<9 | f<<8 | f<<7 | f<<1 | f>>1 | f>>7 | f>>8 | f>>9;
         }
+        possible_moves = filter_occupied_moves(state, possible_moves);
         return possible_moves;
     default:
         return -1; //invalid piecetype
@@ -609,6 +626,15 @@ __uint64_t knight_movement(__uint64_t position, __uint64_t occupied) {
         possible_moves |= position << 17 | position << 15 | position << 10 | position << 6 | position >> 6 | position >> 10| position >> 15 | position >> 17;
 
     return possible_moves;
+}
+
+__uint64_t filter_occupied_moves(board_state* state, __uint64_t moves) {
+    if (state->player == 1) {
+        moves &= ~state->white;
+    } else {
+        moves &= ~state->black;
+    }
+    return moves;
 }
 
 int get_row(__uint64_t position) {

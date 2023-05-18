@@ -115,7 +115,7 @@ __uint64_t get_possible_moves_in_state(board_state* state, int piecetype, __uint
 /**
  * 
 */
-__uint64_t get_all_possible_moves(int piecetype, __uint64_t f);
+__uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t f);
 
 /**
  * 
@@ -135,7 +135,7 @@ __uint64_t knight_movement(__uint64_t position, __uint64_t occupied);
 /**
  * 
 */
-int insideBoardBounds(int x, int y);
+__uint64_t filte_occupied_moves(board_state* state, __uint64_t moves);
 
 /**
  *
