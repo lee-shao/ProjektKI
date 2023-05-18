@@ -678,46 +678,7 @@ void print_binary(__uint64_t value) {
     }
     printf("  | A B C D E F G H \n");
 }
-/*
-void print_board(board_state* pos) {
-    printf(" | A| B| C| D| E| F| G| H|\n8|");
-    for (int i = 0; i < 64; i++) {
-        //print curr field
-        char player = ' ';
-        char piece = ' ';
-        int bit_pos = ((63 - i) / 8) * 8 + (i % 8);; //(i / 8) * 8 + 7 - (i % 8); // ahh what is this xD
 
-        //extract piece
-        for (int j = 0; j < 6; j++) {
-            if ((pos->pieces[j] >> bit_pos) & 1) {
-                piece = PIECE_CHARS[j];
-            }
-        }
-
-        //extract player
-        if ((pos->black >> bit_pos) & 1) {
-            player = 'B';
-        } else if ((pos->white >> bit_pos) & 1) {
-            player = 'W';
-        }
-
-        //check for invalid combinations
-        if (player != ' ' && piece == ' ') {
-            piece = 'E'; //missing piece
-        } else if (player == ' ' && piece != ' ') {
-            player = 'E'; //missing player
-        }
-
-        printf("%c%c|", player, piece);
-
-        //new line every 8 fields
-        if ((i + 1) % 8 == 0 && i != 63) {
-            printf("\n%d|", 7 - (i / 8)); //we print line 8 first
-        }
-    }
-    printf("\n");
-}
-*/
 int evaluate_board_state(board_state* state) {
     int value = 0;
     for (int i = 0; i < 6; i++) {
