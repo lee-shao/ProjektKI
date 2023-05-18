@@ -37,10 +37,10 @@ int main(int argc, char **argv) {
     while (1) {
         print_board(np);
         printf("player: %d, half-moves: %d, full-moves: %d, value: %d\n", np->player, np->half_moves, np->full_moves, evaluate_board_state(np));
-        board_move* sugg_move = get_best_known_move(np, 3); //alpha_beta_recursive(np, -99999, 99999, 0, 4);
+        //board_move* sugg_move = get_best_known_move(np, 3); //alpha_beta_recursive(np, -99999, 99999, 0, 4);
         //print_moves_of_piece(np, ROOK, fen_pos_to_uint("h1", 0));
-        printf("suggested move %s %s\n", uint_pos_to_fen(sugg_move->from), uint_pos_to_fen(sugg_move->to));
-
+        //printf("suggested move %s %s\n", uint_pos_to_fen(sugg_move->from), uint_pos_to_fen(sugg_move->to));
+        
         //handle network move
         if (network_enabled) {
             if (np->player != self_player) {
