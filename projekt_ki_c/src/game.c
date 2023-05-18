@@ -25,7 +25,7 @@ int alpha_beta_recursive(board_state* state, int alpha, int beta, __uint8_t dept
         for (int bit = 0; bit < 64; bit++) {
             if ((combined_board >> bit) & 1) {
                 //get and loop trough all valid moves
-                moves = get_possible_moves_in_state(state, piece, (__uint64_t)1 << bit);
+                moves = get_all_possible_moves(state, piece, (__uint64_t)1 << bit);
                 //board_move* move = malloc(sizeof(board_move));
                 for (int m_bit = 0; m_bit < 64; m_bit++) {
                     if ((moves >> m_bit) & 1) {
@@ -88,7 +88,7 @@ board_move* get_best_known_move(board_state* state, int timeout) {
         for (int bit = 0; bit < 64; bit++) {
             if ((combined_board >> bit) & 1) {
                 //get and loop trough all valid moves
-                moves = get_possible_moves_in_state(state, piece, (__uint64_t)1 << bit);
+                moves = get_all_possible_moves(state, piece, (__uint64_t)1 << bit);
                 //board_move* move = malloc(sizeof(board_move));
                 for (int m_bit = 0; m_bit < 64; m_bit++) {
                     if ((moves >> m_bit) & 1) {
