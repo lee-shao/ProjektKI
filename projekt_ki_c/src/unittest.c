@@ -98,10 +98,9 @@ test_position_state* new_test_pos_state(char* fen, char* pawn_moves, char* bisho
 }
 
 int test_position(int index) {
-    //TODO: implement
-
     int move_count_all = 0;
     int move_count_expected = 0;
+    int failed = 0;
     //loop through figures
     for (int piece = 0; piece < 6; piece++) {
         //combine with curr player
@@ -114,26 +113,49 @@ int test_position(int index) {
         //loop through bits
         __uint64_t moves = 0;
         int move_count = 0;
+        int contains = 0;
+        char tmp_move_str[255] = ""; 
+        char* tmp_str_pointer = tmp_move_str;
         for (int bit = 0; bit < 64; bit++) {
             if ((combined_board >> bit) & 1) {
                 //TODO: run get_moves
-                moves = get_all_possible_moves(piece, (__uint64_t)1 << bit);
+                moves = get_possible_moves_in_state(test_positions[index]->state, piece, (__uint64_t)1 << bit);
                 //moves = 0b0000000011011111001000000000000000000000000000001111111100000000; //CHANGE ME! hardcoded value for testing
                 for (int m_bit = 0; m_bit < 64; m_bit++) {
                     if ((moves >> m_bit) & 1) {
-                        //TODO: actually compare moves
+                        //compare moves
+                        tmp_str_pointer = tmp_move_str + strlen(tmp_move_str);
+                        sprintf(tmp_str_pointer, "%s,", uint_pos_to_fen((__uint64_t)1 << m_bit));
+                        for (int comp_i = 0; comp_i < test_positions[index]->move_counts[piece]; comp_i++) {
+                            if (test_positions[index]->moves[piece][comp_i] == (__uint64_t)1 << m_bit) {
+                                contains += 1;
+                                break;
+                            }
+                        }
                         move_count++;
                     }
                 }
             }
         }
-        if (move_count != test_positions[index]->move_counts[piece]) {
-            printf("piece: %c expected %d moves, but got %d instead\n", PIECE_CHARS[piece], test_positions[index]->move_counts[piece], move_count);
+        if (contains != test_positions[index]->move_counts[piece] || move_count != test_positions[index]->move_counts[piece]) {
+            if (!failed) {
+                //print board only once
+                print_board(test_positions[index]->state);
+            }
+            failed = 1;
+            if (move_count != test_positions[index]->move_counts[piece]) {
+                printf("piece: %c expected %d moves, but got %d instead\n", PIECE_CHARS[piece], test_positions[index]->move_counts[piece], move_count);
+            }
+            printf("piece: %c expected ", PIECE_CHARS[piece]);
+            for (int i = 0; i < test_positions[index]->move_counts[piece]; i++) {
+                printf("%s,", uint_pos_to_fen(test_positions[index]->moves[piece][i]));
+            }
+            printf(" but got %s instead\n", tmp_move_str);
         }
         move_count_all += move_count;
         move_count_expected += test_positions[index]->move_counts[piece];
     }
-    if (move_count_expected != move_count_all) {
+    if (failed) {
         //test failed
         return -1;
     }
@@ -148,7 +170,8 @@ void benchmark_position(int index) {
     for (int i = 0; i < iteration_count; i++) {
         //CHANGE ME: dummy implementation. call actual pick move function in game.c if it's ready
         //loop through figures
-        int moves = 0;
+        get_best_known_move(test_positions[index]->state, 1);
+/*         int moves = 0;
         if (moves == 0) {
             //get rid of compiler warning
         }
@@ -165,7 +188,7 @@ void benchmark_position(int index) {
             for (int bit = 0; bit < 64; bit++) {
                 if ((combined_board >> bit) & 1) {
                     //TODO: run get_moves
-                    moves = get_all_possible_moves(piece, (__uint64_t)1 << bit);
+                    moves = get_possible_moves_in_state(test_positions[index]->state, piece, (__uint64_t)1 << bit);
                     //moves = 0b0000000011011111001000000000000000000000000000001111111100000000; //CHANGE ME! hardcoded value for testing
                     for (int m_bit = 0; m_bit < 64; m_bit++) {
                         if ((moves >> m_bit) & 1) {
@@ -174,8 +197,8 @@ void benchmark_position(int index) {
                     }
                 }
             }
-        }
-    }
+        } */
+    } 
 
     __uint64_t end_time = get_micros();
 

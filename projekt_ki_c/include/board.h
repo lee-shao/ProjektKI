@@ -54,13 +54,27 @@ typedef struct _board_move {
     __uint64_t  from;
     __uint64_t  to;
     int         piece;
+    int         score;
     struct _board_move *next; //make it a linked list
 } board_move;
 
+/*
+ * prints the board
+ */
 void print_board(board_state* pos);
+
+/*
+ * prints the current board state plus a given uint64 as binary
+ */
+void print_board_binary(board_state* pos, __uint64_t bin);
 
 board_state* fen_to_board(char* fen);
 char* board_to_fen(board_state* state);
+
+/*
+ * Clones the given board state
+ */
+board_state* clone_board_state(board_state* state);
 
 /*
  * Converts a piece char in fen notation to an array index for the pieces array
@@ -91,6 +105,12 @@ char* uint_pos_to_fen(__uint64_t pos);
  * performs specified move
  */
 int perform_move(board_state* state, board_move* move);
+
+/*
+ * Calls get_all_possible_moves and checks wich move really can be performed in given state
+ * Also adds special moves like castling or en passant
+ */
+__uint64_t get_possible_moves_in_state(board_state* state, int piecetype, __uint64_t from);
 
 /**
  * 
@@ -137,3 +157,5 @@ void print_binary(__uint64_t value);
  * if positive white is in advantage. if negative black is in advantage
  */
 int evaluate_board_state(board_state* state);
+
+void print_moves_of_piece(board_state* state, int type, __uint64_t pos);
