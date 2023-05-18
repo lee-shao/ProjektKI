@@ -120,17 +120,17 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
 /**
  * 
 */
-__uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied);
+__uint64_t diagonal_movement(__uint64_t position, board_state* state);
 
 /**
  * 
 */
-__uint64_t straight_movement(__uint64_t position, __uint64_t occupied);
+__uint64_t straight_movement(__uint64_t position, board_state* state);
 
 /**
  * 
 */
-__uint64_t knight_movement(__uint64_t position, __uint64_t occupied);
+__uint64_t knight_movement(__uint64_t position);
 
 /**
  * 
