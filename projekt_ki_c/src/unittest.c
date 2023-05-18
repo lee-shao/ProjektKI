@@ -84,7 +84,7 @@ test_position_state* new_test_pos_state(char* fen, char* pawn_moves, char* bisho
         char* curr_move = strtok_r(split_state, delim, &split_state);
         for (j = 0; curr_move != NULL && j < 32; j++) {
             //save move in state
-            state->moves[i][j] = fen_pos_to_uint(curr_move, 0);
+            state->moves[i] |= fen_pos_to_uint(curr_move, 0);
             curr_move = strtok_r(split_state, delim, &split_state);
         }
 
@@ -116,21 +116,20 @@ int test_position(int index) {
         int contains = 0;
         char tmp_move_str[255] = ""; 
         char* tmp_str_pointer = tmp_move_str;
+        __uint64_t moves_combined = 0;
         for (int bit = 0; bit < 64; bit++) {
             if ((combined_board >> bit) & 1) {
                 //TODO: run get_moves
                 moves = get_all_possible_moves(test_positions[index]->state, piece, (__uint64_t)1 << bit);
+                moves_combined |= moves;
                 //moves = 0b0000000011011111001000000000000000000000000000001111111100000000; //CHANGE ME! hardcoded value for testing
                 for (int m_bit = 0; m_bit < 64; m_bit++) {
                     if ((moves >> m_bit) & 1) {
                         //compare moves
                         tmp_str_pointer = tmp_move_str + strlen(tmp_move_str);
                         sprintf(tmp_str_pointer, "%s,", uint_pos_to_fen((__uint64_t)1 << m_bit));
-                        for (int comp_i = 0; comp_i < test_positions[index]->move_counts[piece]; comp_i++) {
-                            if (test_positions[index]->moves[piece][comp_i] == (__uint64_t)1 << m_bit) {
-                                contains += 1;
-                                break;
-                            }
+                        if ((test_positions[index]->moves[piece] >> m_bit) & 1) {
+                            contains += 1;
                         }
                         move_count++;
                     }
@@ -141,16 +140,21 @@ int test_position(int index) {
             if (!failed) {
                 //print board only once
                 print_board(test_positions[index]->state);
+                printf("active player: %d\n", test_positions[index]->state->player);
             }
             failed = 1;
-            if (move_count != test_positions[index]->move_counts[piece]) {
+            printf("piece: %c expected %d moves:\n", PIECE_CHARS[piece], test_positions[index]->move_counts[piece]);
+            print_board_binary(test_positions[index]->state, test_positions[index]->moves[piece]);
+            printf("but got %d:\n", move_count);
+            print_board_binary(test_positions[index]->state, moves_combined);
+/*             if (move_count != test_positions[index]->move_counts[piece]) {
                 printf("piece: %c expected %d moves, but got %d instead\n", PIECE_CHARS[piece], test_positions[index]->move_counts[piece], move_count);
             }
             printf("piece: %c expected ", PIECE_CHARS[piece]);
             for (int i = 0; i < test_positions[index]->move_counts[piece]; i++) {
                 printf("%s,", uint_pos_to_fen(test_positions[index]->moves[piece][i]));
             }
-            printf(" but got %s instead\n", tmp_move_str);
+            printf(" but got %s instead\n", tmp_move_str); */
         }
         move_count_all += move_count;
         move_count_expected += test_positions[index]->move_counts[piece];

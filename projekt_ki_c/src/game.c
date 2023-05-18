@@ -99,7 +99,7 @@ board_move* get_best_known_move(board_state* state, int timeout) {
                         new_move->piece = piece;
                         perform_move(clone, new_move);
                         score = alpha_beta_recursive(clone, -999999, 999999, 0, timeout); //CHANGE ME should not be timeout
-                        if (score > highest_score) {
+                        if (score > highest_score || move->to == 0) {
                             move->from = new_move->from;
                             move->to = new_move->to;
                             move->piece = new_move->piece;

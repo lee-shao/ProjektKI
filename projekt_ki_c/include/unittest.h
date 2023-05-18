@@ -9,7 +9,7 @@
 
 typedef struct _test_position_state {
     struct _board_state* state;
-    __uint64_t moves[6][32]; //all possible moves
+    __uint64_t moves[6]; //all possible moves
     int move_counts[6];
 } test_position_state;
 

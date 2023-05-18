@@ -68,6 +68,43 @@ void print_board(board_state* pos) {
     printf("\n");
 }
 
+void print_board_binary(board_state* pos, __uint64_t bin) {
+    printf(" | A| B| C| D| E| F| G| H|\n8|");
+    for (int i = 0; i < 64; i++) {
+        //print curr field
+        char bin_val = ' ';
+        char piece = ' ';
+        int bit_pos = ((63 - i) / 8) * 8 + (i % 8);; //(i / 8) * 8 + 7 - (i % 8); // ahh what is this xD
+
+        //extract piece
+        if (pos != NULL) {
+            for (int j = 0; j < 6; j++) {
+                if ((pos->pieces[j] >> bit_pos) & 1) {
+                    piece = PIECE_CHARS[j];
+                }
+            }
+
+            //extract player
+            if ((pos->black >> bit_pos) & 1) {
+                piece = tolower(piece);
+            }
+        }
+
+
+        if ((bin >> bit_pos) & 1) {
+            bin_val = 'X';
+        }
+
+        printf("%c%c|", bin_val, piece);
+
+        //new line every 8 fields
+        if ((i + 1) % 8 == 0 && i != 63) {
+            printf("\n%d|", 7 - (i / 8)); //we print line 8 first
+        }
+    }
+    printf("\n");
+}
+
 board_state* fen_to_board(char* fen) {
     //copy string to make sure it is editable
     char* fen_copy = calloc(strlen(fen) + 1, sizeof(char));
@@ -261,17 +298,21 @@ board_move* fen_to_move(char *fen, board_state *state) {
     board_move* move = malloc(sizeof(board_move));
     memset(move, 0, sizeof(board_move));
 
-    //TODO: get possible moves and iterate through them
+    //get possible moves and iterate through them
+    __uint64_t player_board = state->black;
+    if (state->player == 1)
+        player_board = state->white;
+    __uint64_t moves = 0;
     for (int bit_pos = 0; bit_pos < 64; bit_pos++) {
-        __uint64_t player_board = state->black;
-        if (state->player == 1)
-            player_board = state->white;
         if (state->pieces[piece_type] & player_board & (__uint64_t)1 << bit_pos) {
             //TODO: get piece that can perform the move
             //CHANGE ME this is a dummy implementation
             if ((from_column == -1 || bit_pos % 8 == from_column) && (from_row == -1 || bit_pos / 8 == from_row)) { //only search for moves in from row or column if given
-                move->from = (__uint64_t)1 << bit_pos;
-                break;
+                moves = get_all_possible_moves(state, piece_type, (__uint64_t)1 << bit_pos);
+                if (moves & to) {
+                    move->from = (__uint64_t)1 << bit_pos;
+                    break;
+                }
             }
         }
     }
@@ -739,6 +780,8 @@ void print_binary(__uint64_t value) {
 }
 
 int evaluate_board_state(board_state* state) {
+    __uint64_t hill = 0x0000001818000000; //four middle fields
+
     int value = 0;
     for (int i = 0; i < 6; i++) {
         //get pieces of both players
@@ -760,8 +803,17 @@ int evaluate_board_state(board_state* state) {
             count--;
         }
 
+
         value += count * PIECE_VALUES[i];
     }
+
+    //rate hill
+    if (state->pieces[KING] & state->white & hill) {
+        value += 10000;
+    } else if (state->pieces[KING] & state->black & hill) {
+        value -= 10000;
+    }
+
     return value;
 }
 
