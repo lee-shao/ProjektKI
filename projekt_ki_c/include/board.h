@@ -58,7 +58,15 @@ typedef struct _board_move {
     struct _board_move *next; //make it a linked list
 } board_move;
 
+/*
+ * prints the board
+ */
 void print_board(board_state* pos);
+
+/*
+ * prints the current board state plus a given uint64 as binary
+ */
+void print_board_binary(board_state* pos, __uint64_t bin);
 
 board_state* fen_to_board(char* fen);
 char* board_to_fen(board_state* state);
