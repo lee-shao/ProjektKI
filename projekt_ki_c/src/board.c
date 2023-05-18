@@ -455,31 +455,49 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
 
 /**
  * Diese Funktion berechnet ausgehend von einer Position alle diagonal erreichbaren Felder bis zum Spielbrettrand. 
- * TODO: In occupied kann ein 64-Bitboard gespeichert werden, wo bereits Figuren stehen.
+ * In occupied wird ein 64-Bitboard gespeichert, wo bereits die eigenen Figuren stehen.
  * Das Invertierte Bitboard von occupied kann dann verUNDed werden um besetzte Felder auszuschließen. 
  * @author Shao
 */
 __uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied) {
     __uint64_t possible_moves = 0;
+    __uint64_t new_field = 0;
     int row = get_row(position); // Zeile
     int col = get_col(position); // Spalte
     int i = 0;
-    
+
     //links oben
-    for (i = 1; row - i >= 0 && col - i >= 0; i++) {
-        possible_moves |= 1 << ((row - i) * 8 + (col - i));
+    for (i = 1; row + i < 8 && col - i >= 0; i++) {
+        new_field = (__uint64_t) 1 << ((row + i) * 8 + (col - i));
+        if (new_field & occupied) {
+            break;
+        } else {
+            possible_moves |= new_field;
+        }
     }
     //rechts oben
-    for (i = 1; row - i >= 0 && col + i < 8; i++) {
-        possible_moves |= 1 << ((row - i) * 8 + (col + i));
+    for (i = 1; row + i < 8 && col + i < 8; i++) {
+        new_field = (__uint64_t) 1 << ((row + i) * 8 + (col + i));
+        if (new_field & occupied)
+            break;
+        else
+            possible_moves |= new_field;
     }
     //links unten
-    for (i = 1; row + i < 8 && col - i >= 0; i++) {
-        possible_moves |= 1 << ((row + i) * 8 + (col - i));
+    for (i = 1; row - i >= 0 && col - i >= 0; i++) {
+        new_field = (__uint64_t) 1 << ((row - i) * 8 + (col - i));
+        if (new_field & occupied)
+            break;
+        else
+            possible_moves |= new_field;
     }
     //rechts unten
-    for (i = 1; row + i < 8 && col + i < 8; i++) {
-        possible_moves |= 1 << ((row + i) * 8 + (col + i));
+    for (i = 1; row - i >= 0 && col + i < 8; i++) {
+        new_field = (__uint64_t) 1 << ((row - i) * 8 + (col + i));
+        if (new_field & occupied)
+            break;
+        else
+            possible_moves |= new_field;
     }
 
     return possible_moves;
@@ -488,34 +506,49 @@ __uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied) {
 /**
  * Diese Funktion berechnet ausgehend von einer Position alle gerade erreichbaren Felder bis zum Spielbrettrand. 
  * Dafür werden Geraden an die Position der Figur verschoben, um die Felder abzudecken, die die Figur in 4 Richtungen laufen kann. 
- * TODO: In occupied kann ein 64-Bitboard gespeichert werden, wo bereits Figuren stehen.
+ * In occupied wird ein 64-Bitboard gespeichert, wo bereits die eigenen Figuren stehen.
  * Das Invertierte Bitboard von occupied kann dann verUNDed werden um besetzte Felder auszuschließen. 
  * @author Shao
 */
 __uint64_t straight_movement(__uint64_t position, __uint64_t occupied) {
     __uint64_t possible_moves = 0;
-    __uint64_t top = 0xFF00000000000000;
-    __uint64_t bottom = 0x00000000000000FF;
-    __uint64_t left = 0x0101010101010101;
-    __uint64_t right = 0x8080808080808080;
-    __uint64_t mask = 1 << position;
+    __uint64_t new_field = 0;
     int row = get_row(position); // Zeile
     int col = get_col(position); // Spalte
+    int i = 0;
 
     //top
-    mask = (top >> (8 * (7 - row))); //& ~occupied;
-    possible_moves |= mask; // << (8 * (7 - row));
+    for (i = 1; row + i < 8; i++) {
+        new_field = (__uint64_t) 1 << ((row + i) * 8 + col);
+        if (new_field & occupied)
+            break;
+        else
+            possible_moves |= new_field;
+    }
     //bottom
-    mask = (bottom << (8 * row)); //& ~occupied;
-    possible_moves |= mask; // << (8 * row);
+    for (i = 1; row - i >= 0 ; i++) {
+        new_field = (__uint64_t) 1 << ((row - i) * 8 + col);
+        if (new_field & occupied)
+            break;
+        else
+            possible_moves |= new_field;
+    }
     //left
-    mask = (left << col); //& ~occupied;
-    possible_moves |= mask; // << col;
+    for (i = 1; col - i >= 0 ; i++) {
+        new_field = (__uint64_t) 1 << (row * 8 + (col - i));
+        if (new_field & occupied)
+            break;
+        else
+            possible_moves |= new_field;
+    }
     //right
-    mask = (right >> (7 - col)); //~occupied;
-    possible_moves |= mask;// << col;
-
-    possible_moves &= ~position;
+    for (i = 1; col + i < 8 ; i++) {
+        new_field = (__uint64_t) 1 << (row * 8 + (col + i));
+        if (new_field & occupied)
+            break;
+        else
+            possible_moves |= new_field;
+    }
 
     return possible_moves;
 }
