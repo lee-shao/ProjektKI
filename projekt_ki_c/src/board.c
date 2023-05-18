@@ -379,6 +379,8 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
     __uint64_t possible_moves = 0;
     __uint64_t a_col = 0x7F7F7F7F7F7F7F7F;
     __uint64_t h_col = 0xFEFEFEFEFEFEFEFE;
+    __uint64_t w_baseline = 0x000000000000FF00;
+    __uint64_t b_baseline = 0x00FF000000000000;
 
     switch (piecetype)
     {
@@ -387,6 +389,13 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
     * TODO: extra rules (attacking, double step, promotion, en-passant)
     */
     case 0:
+        // doppelzug
+        if (f & w_baseline && state->player == 1) {
+            possible_moves |= f << 16;
+        }
+        if (f & b_baseline && state->player == -1) {
+            possible_moves |= f >> 16;
+        }
         if (f & ~a_col) {
             if (state->player == 1) {
                 possible_moves |= f << 8 | f << 7;
@@ -440,11 +449,11 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
     case KING:
         // If the king is at the left/right border
         if (f & ~a_col) {
-            possible_moves |= f<<7 | f<<8 | f>>1 | f>>8 | f>> 9;
+            possible_moves |= f << 7 | f << 8 | f >> 1 | f >> 8 | f >> 9;
         } else if (f & ~h_col) {
-            possible_moves |= f<<9 | f<<8 | f<<1 | f>>8 | f>> 7;
+            possible_moves |= f << 9 | f << 8 | f << 1 | f >> 8 | f >> 7;
         } else {
-            possible_moves |= f<<9 | f<<8 | f<<7 | f<<1 | f>>1 | f>>7 | f>>8 | f>>9;
+            possible_moves |= f << 9 | f << 8 | f << 7 | f << 1 | f >> 1 | f >> 7 | f >> 8 | f >> 9;
         }
         possible_moves = filter_occupied_moves(state, possible_moves);
         return possible_moves;
