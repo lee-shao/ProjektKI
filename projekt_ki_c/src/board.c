@@ -68,6 +68,43 @@ void print_board(board_state* pos) {
     printf("\n");
 }
 
+void print_board_binary(board_state* pos, __uint64_t bin) {
+    printf(" | A| B| C| D| E| F| G| H|\n8|");
+    for (int i = 0; i < 64; i++) {
+        //print curr field
+        char bin_val = ' ';
+        char piece = ' ';
+        int bit_pos = ((63 - i) / 8) * 8 + (i % 8);; //(i / 8) * 8 + 7 - (i % 8); // ahh what is this xD
+
+        //extract piece
+        if (pos != NULL) {
+            for (int j = 0; j < 6; j++) {
+                if ((pos->pieces[j] >> bit_pos) & 1) {
+                    piece = PIECE_CHARS[j];
+                }
+            }
+
+            //extract player
+            if ((pos->black >> bit_pos) & 1) {
+                piece = tolower(piece);
+            }
+        }
+
+
+        if ((bin >> bit_pos) & 1) {
+            bin_val = 'X';
+        }
+
+        printf("%c%c|", bin_val, piece);
+
+        //new line every 8 fields
+        if ((i + 1) % 8 == 0 && i != 63) {
+            printf("\n%d|", 7 - (i / 8)); //we print line 8 first
+        }
+    }
+    printf("\n");
+}
+
 board_state* fen_to_board(char* fen) {
     //copy string to make sure it is editable
     char* fen_copy = calloc(strlen(fen) + 1, sizeof(char));
