@@ -460,31 +460,31 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
         return possible_moves;
     case BISHOP:
         if (state->player == 1) {
-            possible_moves |= diagonal_movement(f, state->white);
+            possible_moves |= diagonal_movement(f, state);
         } else {
-            possible_moves |= diagonal_movement(f, state->black);
+            possible_moves |= diagonal_movement(f, state);
         }
         return possible_moves;
     case KNIGHT:
         if (state->player == 1) {
-            possible_moves = knight_movement(f, state->white);
+            possible_moves = knight_movement(f);
         } else {
-            possible_moves = knight_movement(f, state->black);
+            possible_moves = knight_movement(f);
         }
         possible_moves = filter_occupied_moves(state, possible_moves);
         return possible_moves;
     case ROOK:
         if (state->player == 1) {
-            possible_moves = straight_movement(f, state->white);
+            possible_moves = straight_movement(f, state);
         } else {
-            possible_moves |= straight_movement(f, state->black);
+            possible_moves |= straight_movement(f, state);
         }
         return possible_moves;
     case QUEEN:
         if (state->player == 1) {
-            possible_moves |= diagonal_movement(f, state->white) | straight_movement(f, state->white);
+            possible_moves |= diagonal_movement(f, state) | straight_movement(f, state);
         } else {
-            possible_moves |= diagonal_movement(f, state->black) | straight_movement(f, state->black);
+            possible_moves |= diagonal_movement(f, state) | straight_movement(f, state);
         }
         return possible_moves;
     case KING:
@@ -509,9 +509,10 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
  * Das Invertierte Bitboard von occupied kann dann verUNDed werden um besetzte Felder auszuschließen. 
  * @author Shao
 */
-__uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied) {
+__uint64_t diagonal_movement(__uint64_t position, board_state* state) {
     __uint64_t possible_moves = 0;
     __uint64_t new_field = 0;
+    __uint64_t occupied = state->white & state->black;
     int row = get_row(position); // Zeile
     int col = get_col(position); // Spalte
     int i = 0;
@@ -520,6 +521,9 @@ __uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied) {
     for (i = 1; row + i < 8 && col - i >= 0; i++) {
         new_field = (__uint64_t) 1 << ((row + i) * 8 + (col - i));
         if (new_field & occupied) {
+            if ((state->player == 1 && new_field & state->black) || (state->player == -1 && new_field & state->white)) {
+                possible_moves |= new_field;
+            }
             break;
         } else {
             possible_moves |= new_field;
@@ -528,26 +532,37 @@ __uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied) {
     //rechts oben
     for (i = 1; row + i < 8 && col + i < 8; i++) {
         new_field = (__uint64_t) 1 << ((row + i) * 8 + (col + i));
-        if (new_field & occupied)
+        if (new_field & occupied) {
+            if ((state->player == 1 && new_field & state->black) || (state->player == -1 && new_field & state->white)) {
+                possible_moves |= new_field;
+            }
             break;
-        else
+        } else {
             possible_moves |= new_field;
+        } 
     }
     //links unten
     for (i = 1; row - i >= 0 && col - i >= 0; i++) {
         new_field = (__uint64_t) 1 << ((row - i) * 8 + (col - i));
-        if (new_field & occupied)
-            break;
-        else
+        if (new_field & occupied) {
+            if ((state->player == 1 && new_field & state->black) || (state->player == -1 && new_field & state->white)) {
+                possible_moves |= new_field;
+            }
+        } else {
             possible_moves |= new_field;
+        }
     }
     //rechts unten
     for (i = 1; row - i >= 0 && col + i < 8; i++) {
         new_field = (__uint64_t) 1 << ((row - i) * 8 + (col + i));
-        if (new_field & occupied)
+        if (new_field & occupied) {
+            if ((state->player == 1 && new_field & state->black) || (state->player == -1 && new_field & state->white)) {
+                possible_moves |= new_field;
+            }
             break;
-        else
+        } else {
             possible_moves |= new_field;
+        }
     }
 
     return possible_moves;
@@ -560,9 +575,10 @@ __uint64_t diagonal_movement(__uint64_t position, __uint64_t occupied) {
  * Das Invertierte Bitboard von occupied kann dann verUNDed werden um besetzte Felder auszuschließen. 
  * @author Shao
 */
-__uint64_t straight_movement(__uint64_t position, __uint64_t occupied) {
+__uint64_t straight_movement(__uint64_t position, board_state* state) {
     __uint64_t possible_moves = 0;
     __uint64_t new_field = 0;
+    __uint64_t occupied = state->white & state->black;
     int row = get_row(position); // Zeile
     int col = get_col(position); // Spalte
     int i = 0;
@@ -570,34 +586,51 @@ __uint64_t straight_movement(__uint64_t position, __uint64_t occupied) {
     //top
     for (i = 1; row + i < 8; i++) {
         new_field = (__uint64_t) 1 << ((row + i) * 8 + col);
-        if (new_field & occupied)
+        if (new_field & occupied) {
+            if ((state->player == 1 && new_field & state->black) || (state->player == -1 && new_field & state->white)) {
+                possible_moves |= new_field;
+            }
             break;
-        else
+        } else {
             possible_moves |= new_field;
+        }
     }
     //bottom
     for (i = 1; row - i >= 0 ; i++) {
         new_field = (__uint64_t) 1 << ((row - i) * 8 + col);
-        if (new_field & occupied)
-            break;
-        else
+        if (new_field & occupied) {
+            if ((state->player == 1 && new_field & state->black) || (state->player == -1 && new_field & state->white)) {
+                possible_moves |= new_field;
+            
+            }
+            break;  
+        } else {
             possible_moves |= new_field;
+        }
     }
     //left
     for (i = 1; col - i >= 0 ; i++) {
         new_field = (__uint64_t) 1 << (row * 8 + (col - i));
-        if (new_field & occupied)
+        if (new_field & occupied) {
+            if ((state->player == 1 && new_field & state->black) || (state->player == -1 && new_field & state->white)) {
+                possible_moves |= new_field;
+            }
             break;
-        else
+        } else {
             possible_moves |= new_field;
+        }
     }
     //right
     for (i = 1; col + i < 8 ; i++) {
         new_field = (__uint64_t) 1 << (row * 8 + (col + i));
-        if (new_field & occupied)
+        if (new_field & occupied) {
+            if ((state->player == 1 && new_field & state->black) || (state->player == -1 && new_field & state->white)) {
+                possible_moves |= new_field;
+            }
             break;
-        else
+        } else {
             possible_moves |= new_field;
+        }
     }
 
     return possible_moves;
@@ -606,7 +639,7 @@ __uint64_t straight_movement(__uint64_t position, __uint64_t occupied) {
 /**
  * Bewegungsmuster für den Springer
 */
-__uint64_t knight_movement(__uint64_t position, __uint64_t occupied) {
+__uint64_t knight_movement(__uint64_t position) {
     __uint64_t possible_moves = 0;
 
     // 2 Felder erreichbar
