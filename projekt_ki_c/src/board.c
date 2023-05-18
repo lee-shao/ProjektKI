@@ -298,17 +298,21 @@ board_move* fen_to_move(char *fen, board_state *state) {
     board_move* move = malloc(sizeof(board_move));
     memset(move, 0, sizeof(board_move));
 
-    //TODO: get possible moves and iterate through them
+    //get possible moves and iterate through them
+    __uint64_t player_board = state->black;
+    if (state->player == 1)
+        player_board = state->white;
+    __uint64_t moves = 0;
     for (int bit_pos = 0; bit_pos < 64; bit_pos++) {
-        __uint64_t player_board = state->black;
-        if (state->player == 1)
-            player_board = state->white;
         if (state->pieces[piece_type] & player_board & (__uint64_t)1 << bit_pos) {
             //TODO: get piece that can perform the move
             //CHANGE ME this is a dummy implementation
             if ((from_column == -1 || bit_pos % 8 == from_column) && (from_row == -1 || bit_pos / 8 == from_row)) { //only search for moves in from row or column if given
-                move->from = (__uint64_t)1 << bit_pos;
-                break;
+                moves = get_all_possible_moves(state, piece_type, (__uint64_t)1 << bit_pos);
+                if (moves & to) {
+                    move->from = (__uint64_t)1 << bit_pos;
+                    break;
+                }
             }
         }
     }
@@ -743,6 +747,8 @@ void print_binary(__uint64_t value) {
 }
 
 int evaluate_board_state(board_state* state) {
+    __uint64_t hill = 0x0000001818000000; //four middle fields
+
     int value = 0;
     for (int i = 0; i < 6; i++) {
         //get pieces of both players
@@ -764,8 +770,17 @@ int evaluate_board_state(board_state* state) {
             count--;
         }
 
+
         value += count * PIECE_VALUES[i];
     }
+
+    //rate hill
+    if (state->pieces[KING] & state->white & hill) {
+        value += 10000;
+    } else if (state->pieces[KING] & state->black & hill) {
+        value -= 10000;
+    }
+
     return value;
 }
 
