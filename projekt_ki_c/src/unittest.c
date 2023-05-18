@@ -119,7 +119,7 @@ int test_position(int index) {
         for (int bit = 0; bit < 64; bit++) {
             if ((combined_board >> bit) & 1) {
                 //TODO: run get_moves
-                moves = get_possible_moves_in_state(test_positions[index]->state, piece, (__uint64_t)1 << bit);
+                moves = get_all_possible_moves(test_positions[index]->state, piece, (__uint64_t)1 << bit);
                 //moves = 0b0000000011011111001000000000000000000000000000001111111100000000; //CHANGE ME! hardcoded value for testing
                 for (int m_bit = 0; m_bit < 64; m_bit++) {
                     if ((moves >> m_bit) & 1) {

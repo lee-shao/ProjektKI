@@ -737,7 +737,7 @@ void print_moves_of_piece(board_state* state, int type, __uint64_t pos) {
         for (int bit = 0; bit < 64; bit++) {
             if ((combined_board >> bit) & 1) {
                 //get and loop trough all valid moves
-                moves = get_possible_moves_in_state(state, type, (__uint64_t)1 << bit);
+                moves = get_all_possible_moves(state, type, (__uint64_t)1 << bit);
                 //board_move* move = malloc(sizeof(board_move));
                 for (int m_bit = 0; m_bit < 64; m_bit++) {
                     if ((moves >> m_bit) & 1) {
@@ -749,7 +749,7 @@ void print_moves_of_piece(board_state* state, int type, __uint64_t pos) {
     } else {
         //print moves of given position
         //get and loop trough all valid moves
-        __uint64_t moves = get_possible_moves_in_state(state, type, pos);
+        __uint64_t moves = get_all_possible_moves(state, type, pos);
         //board_move* move = malloc(sizeof(board_move));
         for (int m_bit = 0; m_bit < 64; m_bit++) {
             if ((moves >> m_bit) & 1) {

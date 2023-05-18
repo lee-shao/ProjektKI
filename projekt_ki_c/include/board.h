@@ -135,7 +135,7 @@ __uint64_t knight_movement(__uint64_t position, __uint64_t occupied);
 /**
  * 
 */
-__uint64_t filte_occupied_moves(board_state* state, __uint64_t moves);
+__uint64_t filter_occupied_moves(board_state* state, __uint64_t moves);
 
 /**
  *
