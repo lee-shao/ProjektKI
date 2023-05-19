@@ -372,6 +372,9 @@ int perform_move(board_state* state, board_move* move) {
     if ((state->pieces[piece_type] & move->from) == 0)
         return 3; //invalid piece type
 
+    __uint64_t test = get_all_possible_moves(state, piece_type, move->from);
+    print_board_binary(state, test);
+
     //perform move
     state->pieces[piece_type] &= ~move->from;
 
@@ -422,6 +425,7 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
     __uint64_t h_col = 0xFEFEFEFEFEFEFEFE;
     __uint64_t w_baseline = 0x000000000000FF00;
     __uint64_t b_baseline = 0x00FF000000000000;
+    __uint64_t occupied = state->white | state->black;
 
     switch (piecetype)
     {
@@ -432,50 +436,62 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
     case 0:
         // doppelzug
         if (f & w_baseline && state->player == 1) {
-            possible_moves |= f << 16;
+            if ((f << 8) & occupied && (f << 16) & occupied) {
+                //
+            } else {
+                possible_moves |= f << 16;
+            }
+        } else if (f & b_baseline && state->player == -1) {
+            if ((f >> 8) & ~occupied && (f >> 16) & ~occupied) {
+                possible_moves |= f >> 16;
+            }
         }
-        if (f & b_baseline && state->player == -1) {
-            possible_moves |= f >> 16;
-        }
+        // Bauer auf H-Reihe
         if (f & ~a_col) {
             if (state->player == 1) {
-                possible_moves |= f << 8;
+                if (f << 8 & ~occupied)
+                    possible_moves |= f << 8;
+                if (f << 7 & state->black)
+                    possible_moves |= f << 7;
+            } else if (state->player == -1) {
+                if (f >> 8 & ~occupied)
+                    possible_moves |= f >> 8;
+                if (f >> 9 & state->white)
+                    possible_moves |= f >> 9;
+            }
+        // Bauer auf A-Reihe
+        } else if (f & ~h_col) {
+            if (state->player == 1) {
+                if (f << 8 & ~occupied)
+                    possible_moves |= f << 8;
+                if (f << 9 & state->black)
+                    possible_moves |= f << 9;
+            } else if (state->player == -1) {
+                if (f >> 8 & ~occupied)
+                    possible_moves |= f >> 8;
+                if (f >> 7 & state->white)
+                    possible_moves |= f >> 7;
+            }
+        // Bauer mittig
+        } else {
+            if (state->player == 1) {
+                if (f << 8 & ~occupied) {
+                    possible_moves |= f << 8;
+                }
+                if (f << 9 & state->black) {
+                    possible_moves |= f << 9;
+                }
                 if (f << 7 & state->black) {
                     possible_moves |= f << 7;
                 }
             } else if (state->player == -1) {
-                possible_moves |= f >> 8;
+                if (f >> 8 & ~occupied) {
+                    possible_moves |= f >> 8;
+                }
                 if (f >> 9 & state->white) {
                     possible_moves |= f >> 9;
                 }
-            }
-        } else if (f & ~h_col) {
-            if (state->player == 1) {
-                possible_moves |= f << 8;
-                if (f << 9 & state->black) {
-                    possible_moves |= f << 9;
-                }
-            } else if (state->player == -1) {
-                possible_moves |= f >> 8;
-                if (f >> 7 & state->black) {
-                    possible_moves |= f >> 7;
-                }
-            }
-        } else {
-            if (state->player == 1) {
-                possible_moves |= f << 8;
-                if (f << 9 & state->black) {
-                    possible_moves |= f << 9;
-                }
-                if (f << 7 & state->black) {
-                    possible_moves |= f << 7;
-                }
-            } else if (state->player == -1) {
-                possible_moves |= f >> 8;
-                if (f >> 9 & state->black) {
-                    possible_moves |= f >> 9;
-                }
-                if (f >> 7 & state->black) {
+                if (f >> 7 & state->white) {
                     possible_moves |= f >> 7;
                 }
             }
