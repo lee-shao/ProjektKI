@@ -436,9 +436,7 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
     case 0:
         // doppelzug
         if (f & w_baseline && state->player == 1) {
-            if ((f << 8) & occupied && (f << 16) & occupied) {
-                //
-            } else {
+            if ((f << 8) & ~occupied && (f << 16) & ~occupied) {
                 possible_moves |= f << 16;
             }
         } else if (f & b_baseline && state->player == -1) {
