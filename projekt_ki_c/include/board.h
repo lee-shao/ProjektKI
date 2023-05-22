@@ -159,3 +159,5 @@ void print_binary(__uint64_t value);
 int evaluate_board_state(board_state* state);
 
 void print_moves_of_piece(board_state* state, int type, __uint64_t pos);
+
+__uint64_t check_castling(board_state* state);
