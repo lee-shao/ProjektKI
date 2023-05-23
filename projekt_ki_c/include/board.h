@@ -172,3 +172,9 @@ __uint64_t check_castling(board_state* state);
  * NOTE: only changes the rooks position. king needs to be moved seperatly
  */
 void detect_and_perforn_castling(board_state* state, board_move* move);
+
+/*
+ * Checks for moves that change castling possibilities and updates board state accordingly
+ * Needs to run on every move to work
+ */
+void update_castling_state(board_state* state);
