@@ -537,6 +537,7 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
             possible_moves |= f << 9 | f << 8 | f << 7 | f << 1 | f >> 1 | f >> 7 | f >> 8 | f >> 9;
         }
         possible_moves = filter_occupied_moves(state, possible_moves);
+        possible_moves |= check_castling(state);
         return possible_moves;
     default:
         return -1; //invalid piecetype
@@ -900,21 +901,21 @@ __uint64_t check_castling(board_state* state) {
     __uint64_t castling = 0;
     if (state->player == 1) {
         //check left
-        if (state->white & 0x0000000000000060 && state->castling & 0x0000000000000020) {
-            castling |= 0x0000000000000020; //b1
+        if (!((state->white | state->black) & 0x000000000000000E) && state->castling & 0x0000000000000040) {
+            castling |= 0x0000000000000004; //c1
         }
         //check right
-        if (state->white & 0x0000000000000006 && state->castling & 0x0000000000000004) {
-            castling |= 0x0000000000000004; //g1
+        if (!((state->white | state->black) & 0x0000000000000060) && state->castling & 0x0000000000000040) {
+            castling |= 0x0000000000000040; //g1
         }
     } else {
         //check left
-        if (state->black & 0x6000000000000000 && state->castling & 0x2000000000000000) {
-            castling |= 0x2000000000000000; //b1
+        if (!((state->white | state->black) & 0x0E00000000000000) && state->castling & 0x0400000000000000) {
+            castling |= 0x0400000000000000; //c8
         }
         //check right
-        if (state->black & 0x0600000000000000 && state->castling & 0x0400000000000000) {
-            castling |= 0x0400000000000000; //g1
+        if (!((state->white | state->black) & 0x6000000000000000) && state->castling & 0x4000000000000000) {
+            castling |= 0x4000000000000000; //g8
         }
     }
     return castling;
