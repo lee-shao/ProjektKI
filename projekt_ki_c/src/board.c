@@ -920,3 +920,28 @@ __uint64_t check_castling(board_state* state) {
     }
     return castling;
 }
+
+void detect_and_perforn_castling(board_state* state, board_move* move) {
+    if (move->piece != KING)
+        return; //not a king. nothing to do here
+    
+    if (move->to == move->from >> 2) {
+        //castling left
+
+        //clear old pos
+        state->pieces[ROOK] &= ~move->to >> 2;
+        state->black &= ~move->to >> 2;
+        state->white &= ~move->to >> 2;
+
+        //set new pos
+        state->pieces[ROOK] |= move->from >> 1;
+        if (state->player == 1) {
+            state->white |= move->from >> 1;
+        } else {
+            state->black |= move->from >> 1;
+        }
+    } else if (move->to == move->from << 2) {
+        //castling right
+
+    }
+}
