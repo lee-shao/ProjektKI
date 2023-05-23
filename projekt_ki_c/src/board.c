@@ -376,6 +376,7 @@ int perform_move(board_state* state, board_move* move) {
     print_board_binary(state, test);
 
     //perform move
+    detect_and_perforn_castling(state, move);
     state->pieces[piece_type] &= ~move->from;
 
     if (to_player != 0) {
@@ -925,9 +926,7 @@ void detect_and_perforn_castling(board_state* state, board_move* move) {
     if (move->piece != KING)
         return; //not a king. nothing to do here
     
-    if (move->to == move->from >> 2) {
-        //castling left
-
+    if (move->to == move->from >> 2) { //castling left
         //clear old pos
         state->pieces[ROOK] &= ~move->to >> 2;
         state->black &= ~move->to >> 2;
@@ -940,8 +939,18 @@ void detect_and_perforn_castling(board_state* state, board_move* move) {
         } else {
             state->black |= move->from >> 1;
         }
-    } else if (move->to == move->from << 2) {
-        //castling right
+    } else if (move->to == move->from << 2) { //castling right
+        //clear old pos
+        state->pieces[ROOK] &= ~move->to << 1;
+        state->black &= ~move->to << 1;
+        state->white &= ~move->to << 1;
 
+        //set new pos
+        state->pieces[ROOK] |= move->from << 1;
+        if (state->player == 1) {
+            state->white |= move->from << 1;
+        } else {
+            state->black |= move->from << 1;
+        }
     }
 }
