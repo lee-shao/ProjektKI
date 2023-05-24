@@ -159,3 +159,22 @@ void print_binary(__uint64_t value);
 int evaluate_board_state(board_state* state);
 
 void print_moves_of_piece(board_state* state, int type, __uint64_t pos);
+
+/*
+ * Checks if king is able to castle at a given board state
+ * Requires state->castling to be set correctly
+ */
+__uint64_t check_castling(board_state* state);
+
+/*
+ * Detects if a given move is castling and and makes required changes to the bord state
+ * Requires state->castling to be set correctly
+ * NOTE: only changes the rooks position. king needs to be moved seperatly
+ */
+void detect_and_perforn_castling(board_state* state, board_move* move);
+
+/*
+ * Checks for moves that change castling possibilities and updates board state accordingly
+ * Needs to run on every move to work
+ */
+void update_castling_state(board_state* state);

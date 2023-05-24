@@ -173,16 +173,16 @@ board_state* fen_to_board(char* fen) {
             switch (castling[i])
             {
             case 'K':
-                board->castling |= (__uint64_t)1 << (('C' - 'A'));
+                board->castling |= 0x0000000000000004;
                 break;
             case 'Q':
-                board->castling |= (__uint64_t)1 << (('G' - 'A'));
+                board->castling |= 0x0000000000000040;
                 break;
             case 'k':
-                board->castling |= (__uint64_t)1 << (('C' - 'A') + 7 * 8);
+                board->castling |= 0x0400000000000000;
                 break;
             case 'q':
-                board->castling |= (__uint64_t)1 << (('G' - 'A') + 7 * 8);
+                board->castling |= 0x4000000000000000;
                 break;
             default:
                 break;
@@ -372,10 +372,12 @@ int perform_move(board_state* state, board_move* move) {
     if ((state->pieces[piece_type] & move->from) == 0)
         return 3; //invalid piece type
 
-    __uint64_t test = get_all_possible_moves(state, piece_type, move->from);
-    print_board_binary(state, test);
+    //__uint64_t test = get_all_possible_moves(state, piece_type, move->from);
+    //print_board_binary(state, test);
 
     //perform move
+    update_castling_state(state);
+    detect_and_perforn_castling(state, move);
     state->pieces[piece_type] &= ~move->from;
 
     if (to_player != 0) {
@@ -535,6 +537,7 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
             possible_moves |= f << 9 | f << 8 | f << 7 | f << 1 | f >> 1 | f >> 7 | f >> 8 | f >> 9;
         }
         possible_moves = filter_occupied_moves(state, possible_moves);
+        possible_moves |= check_castling(state);
         return possible_moves;
     default:
         return -1; //invalid piecetype
@@ -891,4 +894,98 @@ void print_moves_of_piece(board_state* state, int type, __uint64_t pos) {
         }
     }
     printf("\n");
+}
+
+__uint64_t check_castling(board_state* state) {
+    //get saved castling informations
+    __uint64_t castling = 0;
+    if (state->player == 1) {
+        //check left
+        if (!((state->white | state->black) & 0x000000000000000E) && state->castling & 0x0000000000000004) {
+            castling |= 0x0000000000000004; //c1
+        }
+        //check right
+        if (!((state->white | state->black) & 0x0000000000000060) && state->castling & 0x0000000000000040) {
+            castling |= 0x0000000000000040; //g1
+        }
+    } else {
+        //check left
+        if (!((state->white | state->black) & 0x0E00000000000000) && state->castling & 0x0400000000000000) {
+            castling |= 0x0400000000000000; //c8
+        }
+        //check right
+        if (!((state->white | state->black) & 0x6000000000000000) && state->castling & 0x4000000000000000) {
+            castling |= 0x4000000000000000; //g8
+        }
+    }
+    return castling;
+}
+
+void detect_and_perforn_castling(board_state* state, board_move* move) {
+    if (move->piece != KING)
+        return; //not a king. nothing to do here
+    
+    if (move->to == move->from >> 2) { //castling left
+        //clear old pos
+        state->pieces[ROOK] &= ~(move->to >> 2);
+        state->black &= ~(move->to >> 2);
+        state->white &= ~(move->to >> 2);
+
+        //set new pos
+        state->pieces[ROOK] |= move->from >> 1;
+        if (state->player == 1) {
+            state->white |= move->from >> 1;
+        } else {
+            state->black |= move->from >> 1;
+        }
+        //update castling
+        state->castling &= ~move->to;
+    } else if (move->to == move->from << 2) { //castling right
+        //clear old pos
+        state->pieces[ROOK] &= ~(move->to << 1);
+        state->black &= ~(move->to << 1);
+        state->white &= ~(move->to << 1);
+
+        //set new pos
+        state->pieces[ROOK] |= move->from << 1;
+        if (state->player == 1) {
+            state->white |= move->from << 1;
+        } else {
+            state->black |= move->from << 1;
+        }
+        //update castling
+        state->castling &= ~move->to;
+    }
+}
+
+void update_castling_state(board_state* state) {
+    if (state->player == 1) {
+        if (!(state->pieces[KING] & 0x0000000000000010)) { //e1
+            //king
+            state->castling &= ~0x0000000000000044;
+        } else {
+            //left
+            if (!(state->pieces[ROOK] & 0x0000000000000001) || !(state->white & 0x0000000000000001)) { //a1
+                state->castling &= ~0x0000000000000004; //c1
+            }
+            //right
+            if (!(state->pieces[ROOK] & 0x0000000000000080) || !(state->white & 0x0000000000000080)) { //h1
+                state->castling &= ~0x0000000000000040; //g1
+            }            
+        }
+    } else {
+        if (!(state->pieces[KING] & 0x1000000000000000)) { //e8
+            //king
+            state->castling &= ~0x4400000000000000;
+        } else {
+            //left
+            if (!(state->pieces[ROOK] & 0x0100000000000000) || !(state->black & 0x0100000000000000)) { //a8
+                state->castling &= ~0x0400000000000000; //c8
+            }
+            //right
+            if (!(state->pieces[ROOK] & 0x8000000000000000) || !(state->black & 0x8000000000000000)) { //h8
+                state->castling &= ~0x4000000000000000; //g8
+            }
+        }
+    }
 }
