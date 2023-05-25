@@ -89,6 +89,7 @@ board_move* get_best_known_move(board_state* state, int timeout) {
             if ((combined_board >> bit) & 1) {
                 //get and loop trough all valid moves
                 moves = get_all_possible_moves(state, piece, (__uint64_t)1 << bit);
+                //moves = filter_check(state, (__uint64_t)1 << bit, piece, moves);
                 //board_move* move = malloc(sizeof(board_move));
                 for (int m_bit = 0; m_bit < 64; m_bit++) {
                     if ((moves >> m_bit) & 1) {
@@ -99,7 +100,11 @@ board_move* get_best_known_move(board_state* state, int timeout) {
                         new_move->piece = piece;
                         perform_move(clone, new_move);
                         score = alpha_beta_recursive(clone, -999999, 999999, 0, timeout); //CHANGE ME should not be timeout
-                        if (score > highest_score || move->to == 0) {
+                        //invert score for black
+                        if (state->player == -1) {
+                            score = -score;
+                        }
+                        if (score > highest_score || move->to == 0 || (score >= highest_score && rand() % 100 > 95)) {
                             move->from = new_move->from;
                             move->to = new_move->to;
                             move->piece = new_move->piece;

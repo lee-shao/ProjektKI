@@ -320,6 +320,8 @@ board_move* fen_to_move(char *fen, board_state *state) {
     move->to = to;
     move->piece = piece_type;
 
+    //print_board_binary(state, filter_check(state, move->from, piece_type, get_all_possible_moves(state, piece_type, move->from)));
+
     return move;
 }
 
@@ -894,6 +896,54 @@ void print_moves_of_piece(board_state* state, int type, __uint64_t pos) {
         }
     }
     printf("\n");
+}
+
+__uint64_t filter_check(board_state* state, __uint64_t from, int piece_type, __uint64_t moves) {
+    //iterate through moves
+    for (int pre_m_bit = 0; pre_m_bit < 64; pre_m_bit++) {
+        if ((moves >> pre_m_bit) & 1) {
+            board_state* clone = clone_board_state(state);
+            board_move* new_move = malloc(sizeof(board_move));
+            new_move->from = from;
+            new_move->to = (__uint64_t)1 << pre_m_bit;
+            new_move->piece = piece_type;
+            perform_move(clone, new_move);
+
+            for (int piece = 0; piece < 6; piece++) {
+                //combine with curr player
+                __uint64_t combined_board;
+                if (clone->player == 1) {
+                    combined_board = clone->pieces[piece] & clone->white;
+                } else {
+                    combined_board = clone->pieces[piece] & clone->black;
+                }
+                //loop through bits
+                __uint64_t moves2 = 0;
+                int is_check = 0;
+                for (int bit = 0; bit < 64; bit++) {
+                    if ((combined_board >> bit) & 1) {
+                        //get and loop trough all valid moves
+                        moves2 = get_all_possible_moves(clone, piece, (__uint64_t)1 << bit);
+
+                        if (moves2 & clone->pieces[KING]) {
+                            is_check = 1;
+                            moves &= ~((__uint64_t)1 << pre_m_bit);
+                            break;
+                        }
+                        
+                    }
+                }
+
+                if (is_check) {
+                    break;
+                }
+            }
+
+            free(clone); //we don't need the clone any more
+            free(new_move);
+        }
+    }
+    return moves;
 }
 
 __uint64_t check_castling(board_state* state) {
