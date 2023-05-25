@@ -160,6 +160,8 @@ int evaluate_board_state(board_state* state);
 
 void print_moves_of_piece(board_state* state, int type, __uint64_t pos);
 
+__uint64_t filter_check(board_state* state, __uint64_t from, int piece_type, __uint64_t moves);
+
 /*
  * Checks if king is able to castle at a given board state
  * Requires state->castling to be set correctly
