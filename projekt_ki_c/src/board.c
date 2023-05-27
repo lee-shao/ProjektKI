@@ -374,10 +374,13 @@ int perform_move(board_state* state, board_move* move) {
     if ((state->pieces[piece_type] & move->from) == 0)
         return 3; //invalid piece type
 
-    //__uint64_t test = get_all_possible_moves(state, piece_type, move->from);
-    //print_board_binary(state, test);
+    __uint64_t test = get_all_possible_moves(state, piece_type, move->from);
+    print_board_binary(state, test);
+    
 
     //perform move
+    update_en_passant(state, move);
+    print_binary(state->en_passant);
     update_castling_state(state);
     detect_and_perforn_castling(state, move);
     state->pieces[piece_type] &= ~move->from;
@@ -447,7 +450,7 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
             if ((f >> 8) & ~occupied && (f >> 16) & ~occupied) {
                 possible_moves |= f >> 16;
             }
-        }
+        } 
         // Bauer auf H-Reihe
         if (f & ~a_col) {
             if (state->player == 1) {
@@ -498,6 +501,8 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
                 }
             }
         }
+        //print_binary(state->en_passant);
+        possible_moves |= check_en_passant(state, f);
         possible_moves = filter_occupied_moves(state, possible_moves);
         return possible_moves;
     case BISHOP:
@@ -1038,4 +1043,66 @@ void update_castling_state(board_state* state) {
             }
         }
     }
+}
+
+void update_en_passant(board_state* state, board_move* move) {
+
+    __uint64_t from = move->from;
+    __uint64_t to = move->to;
+    __uint64_t w_baseline = 0x000000000000FF00;
+    __uint64_t b_baseline = 0x00FF000000000000;
+    __uint64_t occupied = state->white | state->black;
+
+    if (from & state->pieces[PAWN]) {
+        if (from & w_baseline && state->player == 1) {
+            if (to & ~occupied && (to >> 8) & ~occupied) {
+                state->en_passant = to;
+            } else {
+                state->en_passant = (__uint64_t) 0;
+            }
+        } else if (from & b_baseline && state->player == -1) {
+            if (to & ~occupied && (to << 8) & ~occupied) {
+                state->en_passant = to;
+            } else {
+                state->en_passant = (__uint64_t) 0;
+            }
+        } else {
+            state->en_passant = (__uint64_t) 0;
+        }
+    } else {
+        state->en_passant = (__uint64_t) 0;
+    }
+}
+
+__uint64_t check_en_passant(board_state* state, __uint64_t pos) {
+
+    __uint64_t a_col = 0xFEFEFEFEFEFEFEFE;
+    __uint64_t h_col = 0x7F7F7F7F7F7F7F7F;
+    __uint64_t add_ep_to_pmoves = (__uint64_t) 0;
+
+    if (state->player == 1) {
+        if (pos ^ a_col) {
+            if (pos >> 1 & state->en_passant) {
+                add_ep_to_pmoves |= state->en_passant << 8;
+            }
+        }
+        if (pos ^ h_col) {
+            if (pos << 1 & state->en_passant) {
+                add_ep_to_pmoves |= state->en_passant << 8;
+            }
+        }
+    } else if (state->player == -1) {
+        if (pos ^ a_col) {
+            if (pos << 1 & state->en_passant) {
+                add_ep_to_pmoves |= state->en_passant >> 8;
+            }
+        }
+        if (pos ^ h_col) {
+            if (pos >> 1 & state->en_passant) {
+                add_ep_to_pmoves |= state->en_passant >> 8;
+            }
+        }
+    }
+
+    return add_ep_to_pmoves;
 }

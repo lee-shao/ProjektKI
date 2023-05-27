@@ -180,3 +180,13 @@ void detect_and_perforn_castling(board_state* state, board_move* move);
  * Needs to run on every move to work
  */
 void update_castling_state(board_state* state);
+
+/**
+ * 
+*/
+void update_en_passant(board_state* state, board_move* move);
+
+/**
+ * 
+*/
+__uint64_t check_en_passant(board_state* state, __uint64_t pos);
