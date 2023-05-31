@@ -374,13 +374,13 @@ int perform_move(board_state* state, board_move* move) {
     if ((state->pieces[piece_type] & move->from) == 0)
         return 3; //invalid piece type
 
-    __uint64_t test = get_all_possible_moves(state, piece_type, move->from);
-    print_board_binary(state, test);
+    //__uint64_t test = get_all_possible_moves(state, piece_type, move->from);
+    //print_board_binary(state, test);
     
 
     //perform move
     update_en_passant(state, move);
-    print_binary(state->en_passant);
+    //print_binary(state->en_passant);
     update_castling_state(state);
     detect_and_perforn_castling(state, move);
     state->pieces[piece_type] &= ~move->from;
