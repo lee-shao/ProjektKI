@@ -1,7 +1,9 @@
 #include "unittest.h"
 
 #define TEST_POS_COUNT 4
+#define TEST_ALPHA_BETA_COUNT 4
 test_position_state* test_positions[TEST_POS_COUNT];
+test_alpha_beta_state* test_alpha_beta_positions[TEST_ALPHA_BETA_COUNT];
 
 test_position_state* benchmark_positions[3];
 
@@ -39,6 +41,13 @@ int main(int argc, char **argv) {
     test_positions[2] = new_test_pos_state("8/8/4kpp1/3p4/p6P/2B4b/6P1/6K1 w - - 1 48", "h3,h5,g3,g4", "f6,e5,a5,d4,b4,d2,b2,e1,a1", "", "", "", "h2,f2,h1,f1"); //Stellung 1 - Shirov's Bishop Sacrifice - Gruppe AF
     test_positions[3] = new_test_pos_state("5rk1/pp4pp/4p3/2R3Q1/3n4/6qr/P1P2PPP/5RK1 w - - 2 24", "g3,g3,f3,c3,a3,f4,c4,a4", "", "", "c8,c7,c6,f5,e5,d5,b5,a5,c4,c3,e1,d1,c1,b1,a1", "d8,g7,e7,h6,g6,f6,h5,f5,e5,d5,h4,g4,f4,g3,e3,d2,c1", "h1"); //Stellung 2 - Marshall's Qg3 - Gruppe AF
 
+    test_alpha_beta_positions[0] = new_alpha_beta_state("8/5P2/8/p4Kpp/6pk/P5p1/6P1/8 w - - 0 1", "f7", "f8", 7); //Stellung 1 (Gruppe M) matt in 2
+    test_alpha_beta_positions[1] = new_alpha_beta_state("3r3k/pQ2R2p/6p1/3Pbp2/8/1Pq3P1/P4P1P/6K1 w - - 0 31", "e7", "h7", 4); //Gruppe Q Stellung 1 (unsere stellung)
+    test_alpha_beta_positions[2] = new_alpha_beta_state("7k/4N1pp/8/2n3N1/2P3K1/8/8/8 w - - 0 1", "g5", "f7", 2); //Matt in 1
+    test_alpha_beta_positions[3] = new_alpha_beta_state("6k1/p2qpp2/2p2PpQ/1p4N1/2n5/2N5/PPP2P2/2K5 b", "d7", "d2", 4); //Gruppe I stellung 2 (Matt in 3)
+
+
+
     benchmark_positions[0] = new_test_pos_state("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "", "", "", "", "", ""); //Startstellung
     benchmark_positions[1] = new_test_pos_state("rnb1kb1r/ppp1pp1p/6p1/3q4/3P4/6P1/PP2PP1P/R1BQKBNR w KQkq - 0 1", "", "", "", "", "", ""); //Mittelstellung
     benchmark_positions[2] = new_test_pos_state("8/8/8/8/7P/6K1/1r6/k7 b - - 0 1", "", "", "", "", "", ""); //Endstellung
@@ -48,6 +57,12 @@ int main(int argc, char **argv) {
         if (strcmp(argv[1], "-s") == 0) {
             int test_number = atoi(argv[2]);
             if (test_number > TEST_POS_COUNT || test_position(test_number) != 0) {
+                //test failed
+                return 1;
+            }
+        } else if (strcmp(argv[1], "-ab") == 0) {
+            int test_number = atoi(argv[2]);
+            if (test_number > TEST_POS_COUNT || test_alpha_beta(test_number) != 0) {
                 //test failed
                 return 1;
             }
@@ -100,6 +115,21 @@ test_position_state* new_test_pos_state(char* fen, char* pawn_moves, char* bisho
         //free writable array
         free(curr_moves_str);
     }
+    return state;
+}
+
+test_alpha_beta_state* new_alpha_beta_state(char* fen, char* from, char* to, __uint8_t depth) {
+    test_alpha_beta_state* state = calloc(1, sizeof(test_alpha_beta_state));
+
+    //generate board state
+    state->state = fen_to_board(fen);
+
+    //parse from and to
+    state->from = fen_pos_to_uint(from, 0);
+    state->to = fen_pos_to_uint(to, 0);
+
+    state->depth = depth;
+
     return state;
 }
 
@@ -168,6 +198,21 @@ int test_position(int index) {
     }
     if (failed) {
         //test failed
+        return -1;
+    }
+    //test passed
+    return 0;
+}
+
+int test_alpha_beta(int index) {
+    board_move* move = get_best_known_move(test_alpha_beta_positions[index]->state, test_alpha_beta_positions[index]->depth); //TODO: change to timeout later
+
+    //compare move
+    if (test_alpha_beta_positions[index]->from != move->from || test_alpha_beta_positions[index]->to != move->to) {
+        //wrong move
+        print_board(test_alpha_beta_positions[index]->state);
+        printf("active player: %d\n", test_alpha_beta_positions[index]->state->player);
+        printf("expected %s-%s. but got: %s-%s instead\n", uint_pos_to_fen(test_alpha_beta_positions[index]->from), uint_pos_to_fen(test_alpha_beta_positions[index]->to), uint_pos_to_fen(move->from), uint_pos_to_fen(move->to));
         return -1;
     }
     //test passed

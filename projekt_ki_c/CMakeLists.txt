@@ -26,3 +26,8 @@ add_test(NAME Stellung_0 COMMAND $<TARGET_FILE:unit_test> -s 0)
 add_test(NAME Stellung_1 COMMAND $<TARGET_FILE:unit_test> -s 1)
 add_test(NAME Stellung_2 COMMAND $<TARGET_FILE:unit_test> -s 2)
 add_test(NAME Stellung_3 COMMAND $<TARGET_FILE:unit_test> -s 3)
+
+add_test(NAME Alpha_Beta_0 COMMAND $<TARGET_FILE:unit_test> -ab 0)
+add_test(NAME Alpha_Beta_1 COMMAND $<TARGET_FILE:unit_test> -ab 1)
+add_test(NAME Alpha_Beta_2 COMMAND $<TARGET_FILE:unit_test> -ab 2)
+add_test(NAME Alpha_Beta_3 COMMAND $<TARGET_FILE:unit_test> -ab 3)

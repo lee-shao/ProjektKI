@@ -109,6 +109,7 @@ board_move* get_best_known_move(board_state* state, int timeout) {
                             move->to = new_move->to;
                             move->piece = new_move->piece;
                             move->score = score;
+                            highest_score = score;
                         }
                         free(clone); //we don't need the clone any more
                         free(new_move);
