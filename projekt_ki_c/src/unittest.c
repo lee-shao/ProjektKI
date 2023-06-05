@@ -205,7 +205,7 @@ int test_position(int index) {
 }
 
 int test_alpha_beta(int index) {
-    board_move* move = get_best_known_move(test_alpha_beta_positions[index]->state, test_alpha_beta_positions[index]->depth); //TODO: change to timeout later
+    board_move* move = get_best_known_move_in_depth(test_alpha_beta_positions[index]->state, test_alpha_beta_positions[index]->depth);
 
     //compare move
     if (test_alpha_beta_positions[index]->from != move->from || test_alpha_beta_positions[index]->to != move->to) {
@@ -224,36 +224,8 @@ void benchmark_position(int index) {
     __uint64_t start_time = get_micros();
 
     for (int i = 0; i < iteration_count; i++) {
-        //CHANGE ME: dummy implementation. call actual pick move function in game.c if it's ready
         //loop through figures
-        get_best_known_move(benchmark_positions[index]->state, 1);
-/*         int moves = 0;
-        if (moves == 0) {
-            //get rid of compiler warning
-        }
-        for (int piece = 0; piece < 6; piece++) {
-            //combine with curr player
-            __uint64_t combined_board;
-            if (test_positions[index]->state->player == 1) {
-                combined_board = test_positions[index]->state->pieces[piece] & test_positions[index]->state->white;
-            } else {
-                combined_board = test_positions[index]->state->pieces[piece] & test_positions[index]->state->black;
-            }
-            //loop through bits
-            __uint64_t moves = 0;
-            for (int bit = 0; bit < 64; bit++) {
-                if ((combined_board >> bit) & 1) {
-                    //TODO: run get_moves
-                    moves = get_possible_moves_in_state(test_positions[index]->state, piece, (__uint64_t)1 << bit);
-                    //moves = 0b0000000011011111001000000000000000000000000000001111111100000000; //CHANGE ME! hardcoded value for testing
-                    for (int m_bit = 0; m_bit < 64; m_bit++) {
-                        if ((moves >> m_bit) & 1) {
-                            moves++;
-                        }
-                    }
-                }
-            }
-        } */
+        get_best_known_move_in_depth(benchmark_positions[index]->state, 1);
     } 
 
     __uint64_t end_time = get_micros();
