@@ -5,7 +5,7 @@
 #include "game.h"
 
 int game_phase = PRE_GAME;
-board_move* alpha_move = NULL;
+//board_move* alpha_move = NULL;
 pthread_mutex_t thread_state_lock;
 
 int alpha_beta_recursive(board_state* state, int alpha, int beta, __uint8_t depth, __uint8_t max_depth) {
@@ -35,10 +35,12 @@ int alpha_beta_recursive(board_state* state, int alpha, int beta, __uint8_t dept
                 for (int m_bit = 0; m_bit < 64; m_bit++) {
                     if ((moves >> m_bit) & 1) {
                         board_state* clone = clone_board_state(state);
+                        board_move* alpha_move = malloc(sizeof(board_move));
                         alpha_move->from = (__uint64_t)1 << bit;
                         alpha_move->to = (__uint64_t)1 << m_bit;
                         alpha_move->piece = piece;
                         perform_move(clone, alpha_move);
+                        free(alpha_move);
                         score = alpha_beta_recursive(clone, alpha, beta, depth + 1, max_depth);
                         free(clone); //we don't need the clone any more
 
@@ -76,7 +78,6 @@ int alpha_beta_recursive(board_state* state, int alpha, int beta, __uint8_t dept
 }
 
 board_move* get_best_known_move_in_depth(board_state* state, int depth) {
-    alpha_move = malloc(sizeof(board_move));
     board_move* move = malloc(sizeof(board_move));
     int highest_score = 0;
     int score = 0;
@@ -123,7 +124,6 @@ board_move* get_best_known_move_in_depth(board_state* state, int depth) {
             }
         }
     }
-    free(alpha_move);
     return move;
 }
 
@@ -142,7 +142,7 @@ void* best_move_thread(void* arg) {
     //}
     pthread_mutex_unlock(&thread_state_lock);
 
-    printf("thread finished\n");
+    //printf("thread finished\n");
 
     return NULL;
 }
@@ -193,7 +193,6 @@ board_move* get_best_known_move(board_state* state, int timeout) {
 
     pthread_mutex_lock(&thread_state_lock);
     if (t_state->generated_move == NULL && search_thread != NULL) {
-        printf("AAAAA\n");
         t_state->should_free = 1;
         pthread_cancel(*search_thread); //not finished! cancel thread
         pthread_join(*search_thread, NULL);
