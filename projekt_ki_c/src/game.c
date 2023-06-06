@@ -78,7 +78,7 @@ int alpha_beta_recursive(board_state* state, int alpha, int beta, __uint8_t dept
 }
 
 board_move* get_best_known_move_in_depth(board_state* state, int depth) {
-    board_move* move = malloc(sizeof(board_move));
+    board_move* move = calloc(1, sizeof(board_move));
     int highest_score = 0;
     int score = 0;
     for (int piece = 0; piece < 6; piece++) {
