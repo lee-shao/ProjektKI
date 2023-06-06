@@ -373,14 +373,9 @@ int perform_move(board_state* state, board_move* move) {
 
     if ((state->pieces[piece_type] & move->from) == 0)
         return 3; //invalid piece type
-
-    //__uint64_t test = get_all_possible_moves(state, piece_type, move->from);
-    //print_board_binary(state, test);
     
-
     //perform move
     update_en_passant(state, move);
-    check_pawn_promotion(state, move);
     update_castling_state(state);
     detect_and_perform_castling(state, move);
 
@@ -406,6 +401,8 @@ int perform_move(board_state* state, board_move* move) {
         state->full_moves++;
     }
     
+    check_pawn_promotion(state, move);
+
     //update half moves
     if (piece_type == PAWN || to_player != 0) {
         //reset on pawn move or if a piece is taken
@@ -1116,9 +1113,8 @@ void check_pawn_promotion(board_state* state, board_move* move) {
     if (move->piece == PAWN) {
         if (state->player == 1) {
             if (move->from & seventh_line) {
-                printf("Pawn on seventh line!\n");
+                print_binary(move->from);
                 pawn_promotion(state, move);
-                
             }
         }
         if (state->player == -1) {
@@ -1129,56 +1125,19 @@ void check_pawn_promotion(board_state* state, board_move* move) {
     }
 }
 
-void promote_to_queen(board_state* state, __uint64_t pos) {
-    // clear old position
-    state->pieces[PAWN] &= ~pos;
+void pawn_promotion(board_state* state, board_move* move) {
+    
+    state->pieces[PAWN] &= ~move->to;
     if (state->player == 1) {
-        state->white &= ~pos;
+        state->white &= ~move->to;
     } else {
-        state->black &= ~pos;
+        state->black &= ~move->to;
     }
     // automatically set new Queen
-    state->pieces[QUEEN] |= pos;
+    state->pieces[QUEEN] |= move->to;
     if (state->player == 1) {
-        state->white |= pos;
+        state->white |= move->to;
     } else {
-        state->black |= pos;
-    }
-}
-
-void pawn_promotion(board_state* state, board_move* move) {
-
-    __uint64_t a_col = 0xFEFEFEFEFEFEFEFE;
-    __uint64_t h_col = 0x7F7F7F7F7F7F7F7F;
-    __uint64_t occupied = state->white | state->black;
-    
-    if (state->player == 1) {
-        if (move->from << 8 & ~occupied) {
-            promote_to_queen(state, move->from << 8);
-        }
-        if (move->from & a_col) {
-            if (move->from << 7 & state->black) {
-                promote_to_queen(state, move->from << 7);
-            }
-        }
-        if (move->from & h_col) {
-            if (move->from << 9 & state->black) {
-                promote_to_queen(state, move->from << 9);
-            }
-        }
-    } else {
-        if (move->from >> 8 & ~occupied) {
-            promote_to_queen(state, move->from >> 8);
-        }
-        if (move->from & a_col) {
-            if (move->from >> 9 & state->black) {
-                promote_to_queen(state, move->from >> 9);
-            }
-        }
-        if (move->from & h_col) {
-            if (move->from >> 7 & state->black) {
-                promote_to_queen(state, move->from >> 7);
-            }
-        }
+        state->black |= move->to;
     }
 }

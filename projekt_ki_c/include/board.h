@@ -199,9 +199,4 @@ void check_pawn_promotion(board_state* state, board_move* move);
 /**
  * 
 */
-void promote_to_queen(board_state* state, __uint64_t pos);
-
-/**
- * 
-*/
 void pawn_promotion(board_state* state, board_move* move);
