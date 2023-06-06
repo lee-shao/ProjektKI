@@ -1185,42 +1185,4 @@ void pawn_promotion(board_state* state, board_move* move) {
             }
         }
     }
-
-    // ----------------------------------------------
-    /*
-    if (move->from & a_col) {
-        if (state->player == 1) {
-            if (move->from << 8 & ~occupied) {
-                promote_to_queen(state, move->from << 8);
-            }
-            if (move->from << 7 & state->black) {
-                promote_to_queen(state, move->from << 7);
-            }
-        } else if (state->player == -1) {
-            if (move->from >> 8 & ~occupied) {
-                promote_to_queen(state, move->from >> 8);
-            }
-            if (move->from >> 9 & state->black) {
-                promote_to_queen(state, move->from >> 9);
-            }
-        }
-    }
-    if (move->from & h_col) {
-        if (state->player == 1) {
-            if (move->from << 8 & ~occupied) {
-                promote_to_queen(state, move->from << 8);
-            }
-            if (move->from << 9 & state->black) {
-                promote_to_queen(state, move->from << 9);
-            }
-        } else if (state->player == -1) {
-            if (move->from >> 8 & ~occupied) {
-                promote_to_queen(state, move->from >> 8);
-            }
-            if (move->from >> 7 & state->black) {
-                promote_to_queen(state, move->from >> 7);
-            }
-        }
-    }
-    */
 }
