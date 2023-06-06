@@ -1110,24 +1110,20 @@ __uint64_t check_en_passant(board_state* state, __uint64_t pos) {
 
 void check_pawn_promotion(board_state* state, board_move* move) {
 
-    __uint64_t first_line = 0x00000000000000FF;
-    __uint64_t last_line = 0xFF00000000000000;
     __uint64_t second_line = 0x000000000000FF00;
     __uint64_t seventh_line = 0x00FF000000000000;
 
     if (move->piece == PAWN) {
         if (state->player == 1) {
             if (move->from & seventh_line) {
-                if (move->to & last_line) {
-                    pawn_promotion(state, move);
-                }
+                printf("Pawn on seventh line!\n");
+                pawn_promotion(state, move);
+                
             }
         }
         if (state->player == -1) {
             if (move->from & second_line) {
-                if (move->to & first_line) {
-                    pawn_promotion(state, move);
-                }
+                pawn_promotion(state, move);
             }
         }
     }
