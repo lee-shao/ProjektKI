@@ -499,7 +499,6 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
                 }
             }
         }
-        //print_binary(state->en_passant);
         possible_moves |= check_en_passant(state, f);
         possible_moves = filter_occupied_moves(state, possible_moves);
         return possible_moves;
@@ -1113,7 +1112,6 @@ void check_pawn_promotion(board_state* state, board_move* move) {
     if (move->piece == PAWN) {
         if (state->player == 1) {
             if (move->from & seventh_line) {
-                print_binary(move->from);
                 pawn_promotion(state, move);
             }
         }
@@ -1126,7 +1124,7 @@ void check_pawn_promotion(board_state* state, board_move* move) {
 }
 
 void pawn_promotion(board_state* state, board_move* move) {
-    
+    // clear location
     state->pieces[PAWN] &= ~move->to;
     if (state->player == 1) {
         state->white &= ~move->to;
