@@ -380,9 +380,10 @@ int perform_move(board_state* state, board_move* move) {
 
     //perform move
     update_en_passant(state, move);
-    //print_binary(state->en_passant);
+    check_pawn_promotion(state, move);
     update_castling_state(state);
-    detect_and_perforn_castling(state, move);
+    detect_and_perform_castling(state, move);
+
     state->pieces[piece_type] &= ~move->from;
 
     if (to_player != 0) {
@@ -976,7 +977,7 @@ __uint64_t check_castling(board_state* state) {
     return castling;
 }
 
-void detect_and_perforn_castling(board_state* state, board_move* move) {
+void detect_and_perform_castling(board_state* state, board_move* move) {
     if (move->piece != KING)
         return; //not a king. nothing to do here
     
@@ -1105,4 +1106,121 @@ __uint64_t check_en_passant(board_state* state, __uint64_t pos) {
     }
 
     return add_ep_to_pmoves;
+}
+
+void check_pawn_promotion(board_state* state, board_move* move) {
+
+    __uint64_t first_line = 0x00000000000000FF;
+    __uint64_t last_line = 0xFF00000000000000;
+    __uint64_t second_line = 0x000000000000FF00;
+    __uint64_t seventh_line = 0x00FF000000000000;
+
+    if (move->piece == PAWN) {
+        if (state->player == 1) {
+            if (move->from & seventh_line) {
+                if (move->to & last_line) {
+                    pawn_promotion(state, move);
+                }
+            }
+        }
+        if (state->player == -1) {
+            if (move->from & second_line) {
+                if (move->to & first_line) {
+                    pawn_promotion(state, move);
+                }
+            }
+        }
+    }
+}
+
+void promote_to_queen(board_state* state, __uint64_t pos) {
+    // clear old position
+    state->pieces[PAWN] &= ~pos;
+    if (state->player == 1) {
+        state->white &= ~pos;
+    } else {
+        state->black &= ~pos;
+    }
+    // automatically set new Queen
+    state->pieces[QUEEN] |= pos;
+    if (state->player == 1) {
+        state->white |= pos;
+    } else {
+        state->black |= pos;
+    }
+}
+
+void pawn_promotion(board_state* state, board_move* move) {
+
+    __uint64_t a_col = 0xFEFEFEFEFEFEFEFE;
+    __uint64_t h_col = 0x7F7F7F7F7F7F7F7F;
+    __uint64_t occupied = state->white | state->black;
+    
+    if (state->player == 1) {
+        if (move->from << 8 & ~occupied) {
+            promote_to_queen(state, move->from << 8);
+        }
+        if (move->from & a_col) {
+            if (move->from << 7 & state->black) {
+                promote_to_queen(state, move->from << 7);
+            }
+        }
+        if (move->from & h_col) {
+            if (move->from << 9 & state->black) {
+                promote_to_queen(state, move->from << 9);
+            }
+        }
+    } else {
+        if (move->from >> 8 & ~occupied) {
+            promote_to_queen(state, move->from >> 8);
+        }
+        if (move->from & a_col) {
+            if (move->from >> 9 & state->black) {
+                promote_to_queen(state, move->from >> 9);
+            }
+        }
+        if (move->from & h_col) {
+            if (move->from >> 7 & state->black) {
+                promote_to_queen(state, move->from >> 7);
+            }
+        }
+    }
+
+    // ----------------------------------------------
+    /*
+    if (move->from & a_col) {
+        if (state->player == 1) {
+            if (move->from << 8 & ~occupied) {
+                promote_to_queen(state, move->from << 8);
+            }
+            if (move->from << 7 & state->black) {
+                promote_to_queen(state, move->from << 7);
+            }
+        } else if (state->player == -1) {
+            if (move->from >> 8 & ~occupied) {
+                promote_to_queen(state, move->from >> 8);
+            }
+            if (move->from >> 9 & state->black) {
+                promote_to_queen(state, move->from >> 9);
+            }
+        }
+    }
+    if (move->from & h_col) {
+        if (state->player == 1) {
+            if (move->from << 8 & ~occupied) {
+                promote_to_queen(state, move->from << 8);
+            }
+            if (move->from << 9 & state->black) {
+                promote_to_queen(state, move->from << 9);
+            }
+        } else if (state->player == -1) {
+            if (move->from >> 8 & ~occupied) {
+                promote_to_queen(state, move->from >> 8);
+            }
+            if (move->from >> 7 & state->black) {
+                promote_to_queen(state, move->from >> 7);
+            }
+        }
+    }
+    */
 }

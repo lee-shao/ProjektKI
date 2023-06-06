@@ -173,7 +173,7 @@ __uint64_t check_castling(board_state* state);
  * Requires state->castling to be set correctly
  * NOTE: only changes the rooks position. king needs to be moved seperatly
  */
-void detect_and_perforn_castling(board_state* state, board_move* move);
+void detect_and_perform_castling(board_state* state, board_move* move);
 
 /*
  * Checks for moves that change castling possibilities and updates board state accordingly
@@ -190,3 +190,18 @@ void update_en_passant(board_state* state, board_move* move);
  * 
 */
 __uint64_t check_en_passant(board_state* state, __uint64_t pos);
+
+/**
+ * 
+*/
+void check_pawn_promotion(board_state* state, board_move* move);
+
+/**
+ * 
+*/
+void promote_to_queen(board_state* state, __uint64_t pos);
+
+/**
+ * 
+*/
+void pawn_promotion(board_state* state, board_move* move);
