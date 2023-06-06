@@ -37,6 +37,6 @@ int test_alpha_beta(int index);
 /*
  * Run benchmark on given index
  */
-void benchmark_position(int index);
+void benchmark_position(int index, int depth);
 
 void print_benchmark_result(char* name, unsigned long time);
