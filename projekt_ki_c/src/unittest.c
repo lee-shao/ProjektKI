@@ -67,8 +67,23 @@ int main(int argc, char **argv) {
                 return 1;
             }
         } else if (strcmp(argv[1], "-benchmark") == 0) {
-            for (int i = 0; i < 3; i++) {
-                benchmark_position(i);
+            //min max
+            disable_cutoff = 1;
+            printf("-------- MIN MAX: --------\n");
+            for (int depth = 0; depth <= 3; depth++) { //test multiple depths
+                printf("--- depth: %d ---\n", depth + 1);
+                for (int i = 0; i < 3; i++) {
+                    benchmark_position(i, depth);
+                }
+            }
+            //alpha beta
+            disable_cutoff = 0;
+            printf("-------- ALPHA BETA: --------\n");
+            for (int depth = 0; depth <= 3; depth++) { //test multiple depths
+                printf("--- depth: %d ---\n", depth + 1);
+                for (int i = 0; i < 3; i++) {
+                    benchmark_position(i, depth);
+                }
             }
         }
     }
@@ -219,18 +234,39 @@ int test_alpha_beta(int index) {
     return 0;
 }
 
-void benchmark_position(int index) {
-    int iteration_count = 1000;
+void benchmark_position(int index, int depth) {
+    int iteration_count = 100;
     __uint64_t start_time = get_micros();
 
     for (int i = 0; i < iteration_count; i++) {
         //loop through figures
-        get_best_known_move_in_depth(benchmark_positions[index]->state, 1);
+        state_count = 0;
+        get_best_known_move_in_depth(benchmark_positions[index]->state, depth);
     } 
 
     __uint64_t end_time = get_micros();
 
-    print_benchmark_result("position", (unsigned long)((end_time - start_time) / iteration_count));
+    char benchmark_name[1024];
+    char* pos_name;
+    switch (index)
+    {
+    case 0:
+        pos_name = "start position";
+        break;
+     case 1:
+        pos_name = "middle position";
+        break;
+    case 2:
+        pos_name = "end position";
+        break;
+    default:
+        pos_name = "unknown position";
+        break;
+    }
+
+    sprintf(benchmark_name, "%s with states %d", pos_name, state_count);
+
+    print_benchmark_result(benchmark_name, (unsigned long)((end_time - start_time) / iteration_count));
 }
 
 void print_benchmark_result(char* name, unsigned long time) {

@@ -6,9 +6,12 @@
 
 int game_phase = PRE_GAME;
 //board_move* alpha_move = NULL;
+int state_count = 0;
+int disable_cutoff = 0;
 pthread_mutex_t thread_state_lock;
 
 int alpha_beta_recursive(board_state* state, int alpha, int beta, __uint8_t depth, __uint8_t max_depth) {
+    state_count++; //NOTE: NOT thread safe
     if (depth >= max_depth) {
         return evaluate_board_state(state);
 
@@ -44,6 +47,9 @@ int alpha_beta_recursive(board_state* state, int alpha, int beta, __uint8_t dept
                         score = alpha_beta_recursive(clone, alpha, beta, depth + 1, max_depth);
                         free(clone); //we don't need the clone any more
 
+                        if (disable_cutoff) //NOTE: NOT thread safe
+                            continue;
+                            
                         if (state->player == 1) {
                             if (score > alpha) {
                                 alpha = score;

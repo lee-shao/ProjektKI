@@ -7,6 +7,8 @@
 enum game_phases {PRE_GAME = 0, OPENING, MIDGAME, WIN = 20, LOOSE = 21};
 extern int game_phase;
 extern board_move* alpha_move;
+extern int state_count;
+extern int disable_cutoff;
 extern pthread_mutex_t thread_state_lock;
 
 /*
