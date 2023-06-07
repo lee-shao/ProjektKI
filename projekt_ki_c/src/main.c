@@ -12,12 +12,7 @@ int network_enabled = 0; //set to one if you want to connect to the server
 int self_player = 1; //player you want to be. CHANGE ME should be somewhere else!
 
 int main(int argc, char **argv) {
-    // board_state *np = malloc(sizeof(board_state));
-    // memset(np, 0, sizeof(board_state));
-    // np->pieces[PAWN] =  0b0000000011011111001000000000000000000000000000001111111100000000;
-    // np->pieces[KING] =  0b0100000000000000000000000000000000000000000000000000000000000000;
-    // np->black =         0b1111111111111111000000000000000000000000000000000000000000000000;
-    // np->white =         0b0000000000000000000000000000000000000000000000001111111111111111;
+    
     board_state *np = fen_to_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"); //"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" //"r1b1k1nr/p2p1pNp/n2B4/1p1NP2P/6P1/3P1Q2/P1P1K3/q5b1"
     //init lock
     pthread_mutex_init(&thread_state_lock, NULL);

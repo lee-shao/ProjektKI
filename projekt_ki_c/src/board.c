@@ -373,16 +373,12 @@ int perform_move(board_state* state, board_move* move) {
 
     if ((state->pieces[piece_type] & move->from) == 0)
         return 3; //invalid piece type
-
-    //__uint64_t test = get_all_possible_moves(state, piece_type, move->from);
-    //print_board_binary(state, test);
     
-
     //perform move
     update_en_passant(state, move);
-    //print_binary(state->en_passant);
     update_castling_state(state);
-    detect_and_perforn_castling(state, move);
+    detect_and_perform_castling(state, move);
+
     state->pieces[piece_type] &= ~move->from;
 
     if (to_player != 0) {
@@ -405,6 +401,8 @@ int perform_move(board_state* state, board_move* move) {
         state->full_moves++;
     }
     
+    check_pawn_promotion(state, move);
+
     //update half moves
     if (piece_type == PAWN || to_player != 0) {
         //reset on pawn move or if a piece is taken
@@ -501,7 +499,6 @@ __uint64_t get_all_possible_moves(board_state* state, int piecetype, __uint64_t 
                 }
             }
         }
-        //print_binary(state->en_passant);
         possible_moves |= check_en_passant(state, f);
         possible_moves = filter_occupied_moves(state, possible_moves);
         return possible_moves;
@@ -976,7 +973,7 @@ __uint64_t check_castling(board_state* state) {
     return castling;
 }
 
-void detect_and_perforn_castling(board_state* state, board_move* move) {
+void detect_and_perform_castling(board_state* state, board_move* move) {
     if (move->piece != KING)
         return; //not a king. nothing to do here
     
@@ -1105,4 +1102,40 @@ __uint64_t check_en_passant(board_state* state, __uint64_t pos) {
     }
 
     return add_ep_to_pmoves;
+}
+
+void check_pawn_promotion(board_state* state, board_move* move) {
+
+    __uint64_t second_line = 0x000000000000FF00;
+    __uint64_t seventh_line = 0x00FF000000000000;
+
+    if (move->piece == PAWN) {
+        if (state->player == 1) {
+            if (move->from & seventh_line) {
+                pawn_promotion(state, move);
+            }
+        }
+        if (state->player == -1) {
+            if (move->from & second_line) {
+                pawn_promotion(state, move);
+            }
+        }
+    }
+}
+
+void pawn_promotion(board_state* state, board_move* move) {
+    // clear location
+    state->pieces[PAWN] &= ~move->to;
+    if (state->player == 1) {
+        state->white &= ~move->to;
+    } else {
+        state->black &= ~move->to;
+    }
+    // automatically set new Queen
+    state->pieces[QUEEN] |= move->to;
+    if (state->player == 1) {
+        state->white |= move->to;
+    } else {
+        state->black |= move->to;
+    }
 }
