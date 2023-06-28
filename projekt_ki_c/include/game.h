@@ -12,7 +12,8 @@ extern int disable_cutoff;
 extern pthread_mutex_t thread_state_lock;
 
 extern int time_limit; //time limit of the entire game
-extern float time_spent;
+extern float time_spent_black;
+extern float time_spent_white;
 
 /*
  * Saves the state of a timeout driven alpha beta search
