@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.0)
 project(projekt_ki)
 set (CMAKE_C_STANDARD 11)
 
-add_executable(projekt_ki src/main.c src/board.c src/game.c src/network.c)
+add_executable(projekt_ki src/main.c src/board.c src/game.c src/network.c src/transposition_table.c)
 target_include_directories(projekt_ki PRIVATE include)
 target_compile_options(projekt_ki PRIVATE -Wall -g)
 #threads because we can hehe
@@ -11,7 +11,7 @@ find_package(Threads REQUIRED)
 target_link_libraries(projekt_ki PRIVATE Threads::Threads)
 target_link_libraries(projekt_ki PRIVATE m)
 
-add_executable(unit_test src/unittest.c src/board.c src/game.c src/network.c)
+add_executable(unit_test src/unittest.c src/board.c src/game.c src/network.c src/transposition_table.c)
 target_include_directories(unit_test PRIVATE include)
 target_compile_options(unit_test PRIVATE -Wall -g) # -O2
 #threads because we can hehe

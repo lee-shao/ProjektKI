@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+#include "uthash.h"
+
 //TODO all game related stuff here (winning etc.)
 
 enum game_phases {PRE_GAME = 0, OPENING, MIDGAME, WIN = 20, LOOSE = 21};
@@ -9,7 +11,9 @@ extern int game_phase;
 extern board_move* alpha_move;
 extern int state_count;
 extern int disable_cutoff;
+extern int disable_transposition;
 extern pthread_mutex_t thread_state_lock;
+extern __uint64_t zobrist_key_rands[64][12];
 
 /*
  * Saves the state of a timeout driven alpha beta search
@@ -22,6 +26,18 @@ typedef struct _thread_state {
     board_state* state;
     __uint8_t should_free;
 } thread_state;
+
+/*
+ * Initializes a new game
+ */
+void game_init();
+
+/*
+ * Generates a 64 bit random number
+ */
+__uint64_t get_rand_64();
+
+__uint64_t generate_zobrist_key(board_state* state);
 
 __uint64_t get_micros();
 

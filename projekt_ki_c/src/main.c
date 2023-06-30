@@ -7,15 +7,19 @@
 #include "board.h"
 #include "game.h"
 #include "network.h"
+#include "transposition_table.h"
 
 int network_enabled = 0; //set to one if you want to connect to the server
 int self_player = 1; //player you want to be. CHANGE ME should be somewhere else!
 
 int main(int argc, char **argv) {
+
+    //get_rand_64();
+    //return 0;
     
     board_state *np = fen_to_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"); //"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" //"r1b1k1nr/p2p1pNp/n2B4/1p1NP2P/6P1/3P1Q2/P1P1K3/q5b1"
-    //init lock
-    pthread_mutex_init(&thread_state_lock, NULL);
+
+    game_init();
     //alpha_move = malloc(sizeof(board_move));
 
     if (network_enabled) {
@@ -34,12 +38,17 @@ int main(int argc, char **argv) {
 
     //simple move interface for testing
     while (1) {
+        printf("%s\n", board_to_fen(np));
         print_board(np);
+        printf("zobrist_key: %llu\n", generate_zobrist_key(np));
         printf("player: %d, half-moves: %d, full-moves: %d, value: %d\n", np->player, np->half_moves, np->full_moves, evaluate_board_state(np));
         board_move* sugg_move = get_best_known_move(np, 2000); //alpha_beta_recursive(np, -99999, 99999, 0, 4);
+        //tt_clear(trans_t);
+        //get_best_known_move(np, 2000);
         //get_best_known_move(clone_board_state(np), 2000);
         //print_moves_of_piece(np, ROOK, fen_pos_to_uint("h1", 0));
-        printf("suggested move %s %s\n", uint_pos_to_fen(sugg_move->from), uint_pos_to_fen(sugg_move->to));
+        printf("suggested move %s %s - %d\n", uint_pos_to_fen(sugg_move->from), uint_pos_to_fen(sugg_move->to), sugg_move->score);
+        printf("hash_sets: %d, hash_dels: %d, hash_collisions: %d, hash_hits: %d, states: %d\n", hash_sets, hash_deletes, hash_collisions, hash_hits, state_count);
         //perform_move(np, sugg_move);
         //sleep(1);
         //continue;
@@ -79,6 +88,8 @@ int main(int argc, char **argv) {
                 int move_code = 0;
                 if ((move_code = perform_move(np, b_move)) != 0) {
                     printf("invalid move!%d\n", move_code);
+                } else {
+                    tt_clear(trans_t);
                 }
                 free(b_move);
             } else if (strlen(move) >= 3) {
@@ -95,6 +106,7 @@ int main(int argc, char **argv) {
                 free(b_move);
             } else if (strlen(move) >= 1) {
                 if (move[0] == 'q') {
+                    //tt_clear(trans_t);
                     free(move);
                     break;
                 }

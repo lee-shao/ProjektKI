@@ -53,9 +53,9 @@ typedef struct _board_state {
 typedef struct _board_move {
     __uint64_t  from;
     __uint64_t  to;
-    int         piece;
+    __int8_t    piece;
     int         score;
-    struct _board_move *next; //make it a linked list
+    //struct _board_move *next; //make it a linked list
 } board_move;
 
 /*

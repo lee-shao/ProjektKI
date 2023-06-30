@@ -215,8 +215,44 @@ board_state* fen_to_board(char* fen) {
 }
 
 char* board_to_fen(board_state* state) {
-    //TODO: implement
-    return NULL;
+    //NOTE: not finished but should be enough for a hash key. Ok nvm idk what I had in mind but this should not be used as hash key!
+    char* fen = calloc(128, sizeof(char));
+    int fen_index = 0;
+    int count_since_last_piece = 0;
+
+    for (int i = 0; i < 64; i++) {
+        int bit_pos = ((63 - i) / 8) * 8 + (i % 8);
+        if (i % 8 == 0 && i > 0) {
+            if (count_since_last_piece > 0) {
+                fen[fen_index] = '0' + count_since_last_piece;
+                fen_index++;
+                count_since_last_piece = 0;
+            }
+            fen[fen_index] = '/';
+            fen_index++;
+        }
+        if (((state->black | state->white) >> bit_pos) & 1) {
+            //get piece type
+            if (count_since_last_piece > 0) {
+                fen[fen_index] = '0' + count_since_last_piece;
+                fen_index++;
+                count_since_last_piece = 0;
+            }
+            for (int piece = 0; piece < 6; piece++) {
+                if ((state->pieces[piece] >> bit_pos) & 1) {
+                    fen[fen_index] = PIECE_CHARS[piece];
+                    if ((state->black >> bit_pos) & 1) {
+                        fen[fen_index] = tolower(fen[fen_index]);
+                    }
+                    fen_index++;
+                    break;
+                }
+            }
+        } else {
+            count_since_last_piece++;
+        }
+    }
+    return fen;
 }
 
 board_state* clone_board_state(board_state* state) {
