@@ -1,6 +1,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "game.h"
 
@@ -9,6 +10,10 @@ int game_phase = PRE_GAME;
 int state_count = 0;
 int disable_cutoff = 0;
 pthread_mutex_t thread_state_lock;
+
+int time_limit = 300;
+float time_spent_black = 0;
+float time_spent_white = 0;
 
 int alpha_beta_recursive(board_state* state, int alpha, int beta, __uint8_t depth, __uint8_t max_depth) {
     state_count++; //NOTE: NOT thread safe
@@ -211,6 +216,14 @@ board_move* get_best_known_move(board_state* state, int timeout) {
     free(search_thread);
 
     printf("generating took %dms\n", (int)(get_micros() - start_time) / 1000);
+    if (state->player == 1) {
+        time_spent_white += (double)(get_micros() - start_time) / 1000000.0;
+        printf("total time spent generating: %d.%ds\n", (int)(time_spent_white), (int)(time_spent_white * 10) % 10);
+    } else {
+        time_spent_black += (double)(get_micros() - start_time) / 1000000.0;
+        printf("total time spent generating: %d.%ds\n", (int)(time_spent_black), (int)(time_spent_black * 10) % 10);
+
+    }
     return best_move;
 }
 
@@ -218,4 +231,31 @@ __uint64_t get_micros() {
     struct timeval time;
     gettimeofday(&time,NULL);
     return time.tv_sec*(__uint64_t)1000000+time.tv_usec;
+}
+
+float min(float x1, float x2) {
+    if (x1 < x2)
+        return x1;
+    return x2;
+}
+
+float max(float x1, float x2) {
+    if (x1 > x2)
+        return x1;
+    return x2;
+}
+
+int get_time_for_search(board_state* state) {
+    float x = state->full_moves;
+
+    //get time for current player
+    float time_spent = time_spent_black;
+    if (state->player == 1) {
+        time_spent = time_spent_white;
+    }
+
+    float fx = 1;
+    if (x > 0) //can't run log on 0
+        fx = min((time_limit - time_spent) / 15, min(1 + pow((x / (5.0 / (time_limit / 300.0))), 2), 2 + max(min(x / 2, 5), (log10(x/7.0) * time_limit * 0.04 * (time_limit - time_spent) / 400 / (time_limit * 0.002))))) * 1000;
+    return fx;
 }

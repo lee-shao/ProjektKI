@@ -11,6 +11,10 @@ extern int state_count;
 extern int disable_cutoff;
 extern pthread_mutex_t thread_state_lock;
 
+extern int time_limit; //time limit of the entire game
+extern float time_spent_black;
+extern float time_spent_white;
+
 /*
  * Saves the state of a timeout driven alpha beta search
  * depth: desired search depth
@@ -36,3 +40,8 @@ board_move* get_best_known_move_in_depth(board_state* state, int depth);
  * Gets best move in given timeout in milliseconds
  */
 board_move* get_best_known_move(board_state* state, int timeout);
+
+/*
+ * Calculates the time availible for the next search
+ */
+int get_time_for_search(board_state* state);
