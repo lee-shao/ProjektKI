@@ -68,22 +68,25 @@ __uint64_t generate_zobrist_key(board_state* state) {
     return key;
 }
 
+/*
+ * Orientiert an: https://web.archive.org/web/20071031100051/http://www.brucemo.com/compchess/programming/hashing.htm
+ */
 int alpha_beta_neg(board_state* state, int alpha, int beta, __uint8_t depth, __uint8_t max_depth) {
     state_count++; //NOTE: NOT thread safe
 
     //board_move* best_move = calloc(1, sizeof(board_move));
     //__uint64_t zobrist_key = 0;
     if (!disable_transposition) {
-        __uint64_t zobrist_key = generate_zobrist_key(state);
         if (state->key == 0) {
+            __uint64_t zobrist_key = generate_zobrist_key(state);
             state->key = zobrist_key;
         } else {
-            if (state->key != zobrist_key) {
-                printf("ZOBRIST KEY MISMATCH!!!!\n");
-                state->key = zobrist_key;
-            } else {
-                printf("ZOBRIST KEY MATCH!\n");
-            }
+            //if (state->key != zobrist_key) {
+            //    printf("ZOBRIST KEY MISMATCH!!!!\n");
+            //    state->key = zobrist_key;
+            //} else {
+            //    printf("ZOBRIST KEY MATCH!\n");
+            //}
         }
         //read transposition_table
         transposition_table *pos = tt_get_position(trans_t, state->key, state->player);
