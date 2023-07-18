@@ -38,16 +38,22 @@ int main(int argc, char **argv) {
 
     //simple move interface for testing
     while (1) {
+        int board_value = evaluate_board_state(np);
         printf("%s\n", board_to_fen(np));
         print_board(np);
         printf("zobrist_key: %llu\n", generate_zobrist_key(np));
-        printf("player: %d, half-moves: %d, full-moves: %d, value: %d\n", np->player, np->half_moves, np->full_moves, evaluate_board_state(np));
+        printf("player: %d, half-moves: %d, full-moves: %d, value: %d\n", np->player, np->half_moves, np->full_moves, board_value);
         board_move* sugg_move = get_best_known_move(np, get_time_for_search(np)); //alpha_beta_recursive(np, -99999, 99999, 0, 4);
         //get_best_known_move(clone_board_state(np), 2000);
         //print_moves_of_piece(np, ROOK, fen_pos_to_uint("h1", 0));
-        printf("suggested move %s %s - %d\n", uint_pos_to_fen(sugg_move->from), uint_pos_to_fen(sugg_move->to), sugg_move->score);
         printf("hash_sets: %d, hash_dels: %d, hash_collisions: %d, hash_hits: %d, states: %d\n", hash_sets, hash_deletes, hash_collisions, hash_hits, state_count);
-        //perform_move(np, sugg_move);
+        if (sugg_move->to != 0 && board_value < 9000 && board_value > -9000) {
+            printf("suggested move %s %s - %d\n", uint_pos_to_fen(sugg_move->from), uint_pos_to_fen(sugg_move->to), sugg_move->score);
+            //perform_move(np, sugg_move);
+        } else {
+            printf("game end!\n");
+            return 0;
+        }
         //sleep(1);
         //continue;
         
