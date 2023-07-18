@@ -12,8 +12,7 @@ int state_count = 0;
 int disable_cutoff = 0;
 int disable_transposition = 0;
 pthread_mutex_t thread_state_lock;
-__uint64_t zobrist_key_rands[64][12];
-__uint64_t zobrist_white = 0;
+
 
 __uint64_t get_rand_64() {
     __uint64_t random = 0;
@@ -73,11 +72,21 @@ int alpha_beta_neg(board_state* state, int alpha, int beta, __uint8_t depth, __u
     state_count++; //NOTE: NOT thread safe
 
     //board_move* best_move = calloc(1, sizeof(board_move));
-    __uint64_t zobrist_key = 0;
+    //__uint64_t zobrist_key = 0;
     if (!disable_transposition) {
-        zobrist_key = generate_zobrist_key(state);
+        __uint64_t zobrist_key = generate_zobrist_key(state);
+        if (state->key == 0) {
+            state->key = zobrist_key;
+        } else {
+            if (state->key != zobrist_key) {
+                printf("ZOBRIST KEY MISMATCH!!!!\n");
+                state->key = zobrist_key;
+            } else {
+                printf("ZOBRIST KEY MATCH!\n");
+            }
+        }
         //read transposition_table
-        transposition_table *pos = tt_get_position(trans_t, zobrist_key, state->player);
+        transposition_table *pos = tt_get_position(trans_t, state->key, state->player);
         if (pos != NULL && pos->depth >= max_depth - depth) {
             //printf("HASH\n");
             if (pos->type == 0) {
@@ -146,7 +155,7 @@ int alpha_beta_neg(board_state* state, int alpha, int beta, __uint8_t depth, __u
 
                             if (score >= beta) {
                                 if (!disable_transposition)
-                                    tt_set_position(trans_t, zobrist_key, state->player, beta, max_depth - depth, 2);
+                                    tt_set_position(trans_t, state->key, state->player, beta, max_depth - depth, 2);
                                 return beta;
                             }
                             if (score > alpha) {
@@ -165,9 +174,9 @@ int alpha_beta_neg(board_state* state, int alpha, int beta, __uint8_t depth, __u
 
     if (!disable_transposition) {
         if (score_increased)
-            tt_set_position(trans_t, zobrist_key, state->player, alpha, max_depth - depth, 0);
+            tt_set_position(trans_t, state->key, state->player, alpha, max_depth - depth, 0);
         else
-            tt_set_position(trans_t, zobrist_key, state->player, alpha, max_depth - depth, 1);
+            tt_set_position(trans_t, state->key, state->player, alpha, max_depth - depth, 1);
     }
 
     //free(best_move);
@@ -179,41 +188,54 @@ int alpha_beta_recursive(board_state* state, int alpha, int beta, __uint8_t dept
     state_count++; //NOTE: NOT thread safe
 
     //board_move* best_move = calloc(1, sizeof(board_move));
-    __uint64_t zobrist_key = generate_zobrist_key(state);
+    //__uint64_t zobrist_key = generate_zobrist_key(state);
+    if (!disable_transposition) {
+        if (state->key == 0) {
+            __uint64_t zobrist_key = generate_zobrist_key(state);
+            state->key = zobrist_key;
+        } else {
+            //if (state->key != zobrist_key) {
+            //    printf("ZOBRIST KEY MISMATCH!!!!\n");
+            //    state->key = zobrist_key;
+            //} else {
+            //    printf("ZOBRIST KEY MATCH!\n");
+            //}
+        }
 
-    //read transposition_table
-    transposition_table *pos = tt_get_position(trans_t, zobrist_key, state->player);
-    if (pos != NULL && pos->depth >= max_depth - depth) {
-        //printf("HASH\n");
-        if (pos->type == 0) {
-            hash_hits++;
-            return pos->score;
-        } else if (pos->type == 1) {
-            //printf("ALPHA\n");
-            if (state->player == 1) {
-                if (pos->score <= alpha) {
-                    hash_hits++;
-                    return alpha;
+        //read transposition_table
+        transposition_table *pos = tt_get_position(trans_t, state->key, state->player);
+        if (pos != NULL && pos->depth >= max_depth - depth) {
+            //printf("HASH\n");
+            if (pos->type == 0) {
+                hash_hits++;
+                return pos->score;
+            } else if (pos->type == 1) {
+                //printf("ALPHA\n");
+                if (state->player == 1) {
+                    if (pos->score <= alpha) {
+                        hash_hits++;
+                        return alpha;
+                    }
+                } else {
+                    if (pos->score >= beta) {
+                        hash_hits++;
+                        return beta;
+                    }
                 }
-            } else {
-                if (pos->score >= beta) {
-                    hash_hits++;
-                    return beta;
-                }
+            } else if (pos->type == 2) {
+                //printf("BETA\n");
+                if (state->player == 1) {
+                    if (pos->score >= beta) {
+                        hash_hits++;
+                        return beta;
+                    }
+                } else {
+                    if (pos->score <= alpha) {
+                        hash_hits++;
+                        return alpha;
+                    }
+                }         
             }
-        } else if (pos->type == 2) {
-            //printf("BETA\n");
-            if (state->player == 1) {
-                if (pos->score >= beta) {
-                    hash_hits++;
-                    return beta;
-                }
-            } else {
-                if (pos->score <= alpha) {
-                    hash_hits++;
-                    return alpha;
-                }
-            }         
         }
     }
 
@@ -274,7 +296,8 @@ int alpha_beta_recursive(board_state* state, int alpha, int beta, __uint8_t dept
                                     alpha = score;
                                     if (alpha >= beta) {
                                         //free(best_move);
-                                        tt_set_position(trans_t, zobrist_key, state->player, score, max_depth - depth, 2);
+                                        if (!disable_transposition)
+                                            tt_set_position(trans_t, state->key, state->player, score, max_depth - depth, 2);
                                         return score;
                                     }
                                     //tt_set_position(trans_t, zobrist_key, score, max_depth - depth, 0);
@@ -285,7 +308,8 @@ int alpha_beta_recursive(board_state* state, int alpha, int beta, __uint8_t dept
                                     beta = score;
                                     if (beta <= alpha) {
                                         //free(best_move);
-                                        tt_set_position(trans_t, zobrist_key, state->player, score, max_depth - depth, 2);
+                                        if (!disable_transposition)
+                                            tt_set_position(trans_t, state->key, state->player, score, max_depth - depth, 2);
                                         return score;
                                     }
                                     score_increased = 1;
@@ -305,17 +329,21 @@ int alpha_beta_recursive(board_state* state, int alpha, int beta, __uint8_t dept
 
     //free(best_move);
     if (state->player == 1) {
-        if (score_increased)
-            tt_set_position(trans_t, zobrist_key, state->player, alpha, max_depth - depth, 0);
-        else
-            tt_set_position(trans_t, zobrist_key, state->player, alpha, max_depth - depth, 1);
+        if (!disable_transposition) {
+            if (score_increased)
+                tt_set_position(trans_t, state->key, state->player, alpha, max_depth - depth, 0);
+            else
+                tt_set_position(trans_t, state->key, state->player, alpha, max_depth - depth, 1);
+        }
         return alpha;
     }
 
-    if (score_increased)
-        tt_set_position(trans_t, zobrist_key, state->player, beta, max_depth - depth, 0);
-    else
-        tt_set_position(trans_t, zobrist_key, state->player, beta, max_depth - depth, 1);
+    if (!disable_transposition) {
+        if (score_increased)
+            tt_set_position(trans_t, state->key, state->player, beta, max_depth - depth, 0);
+        else
+            tt_set_position(trans_t, state->key, state->player, beta, max_depth - depth, 1);
+    }
     return beta;
 }
 

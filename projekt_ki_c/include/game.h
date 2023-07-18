@@ -13,7 +13,6 @@ extern int state_count;
 extern int disable_cutoff;
 extern int disable_transposition;
 extern pthread_mutex_t thread_state_lock;
-extern __uint64_t zobrist_key_rands[64][12];
 
 /*
  * Saves the state of a timeout driven alpha beta search

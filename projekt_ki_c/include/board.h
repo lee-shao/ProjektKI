@@ -10,6 +10,8 @@ extern const char PIECE_CHARS[];
 extern const int PIECE_VALUES[];
 
 extern const int LOG264_TAB[64];
+extern __uint64_t zobrist_key_rands[64][12];
+extern __uint64_t zobrist_white;
 
 /*
  * Uses a table to improve performance
@@ -26,6 +28,7 @@ int log2_64 (__uint64_t value);
  * castling: castling possibilities
  * half_moves: moves (of each player) since last pawn move or piece capture
  * full_moves: increments on every black move
+ * key: zobrist key
  */
 typedef struct _board_state {
     //pieces
@@ -40,6 +43,8 @@ typedef struct _board_state {
     //clocks
     __uint16_t  half_moves;
     __uint16_t  full_moves;
+    //zobrist key of board state
+    __uint64_t  key;
 } board_state;
 
 /*
