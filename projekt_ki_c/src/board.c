@@ -6,6 +6,8 @@
 
 const char PIECE_CHARS[] = {'P', 'B', 'N', 'R', 'Q', 'K'};
 const int PIECE_VALUES[] = {10, 30, 30, 50, 90, 20000};
+__uint64_t zobrist_key_rands[64][12];
+__uint64_t zobrist_white = 0;
 
 const int LOG264_TAB[64] = {
     63,  0, 58,  1, 59, 47, 53,  2,
@@ -215,8 +217,44 @@ board_state* fen_to_board(char* fen) {
 }
 
 char* board_to_fen(board_state* state) {
-    //TODO: implement
-    return NULL;
+    //NOTE: not finished but should be enough for a hash key. Ok nvm idk what I had in mind but this should not be used as hash key!
+    char* fen = calloc(128, sizeof(char));
+    int fen_index = 0;
+    int count_since_last_piece = 0;
+
+    for (int i = 0; i < 64; i++) {
+        int bit_pos = ((63 - i) / 8) * 8 + (i % 8);
+        if (i % 8 == 0 && i > 0) {
+            if (count_since_last_piece > 0) {
+                fen[fen_index] = '0' + count_since_last_piece;
+                fen_index++;
+                count_since_last_piece = 0;
+            }
+            fen[fen_index] = '/';
+            fen_index++;
+        }
+        if (((state->black | state->white) >> bit_pos) & 1) {
+            //get piece type
+            if (count_since_last_piece > 0) {
+                fen[fen_index] = '0' + count_since_last_piece;
+                fen_index++;
+                count_since_last_piece = 0;
+            }
+            for (int piece = 0; piece < 6; piece++) {
+                if ((state->pieces[piece] >> bit_pos) & 1) {
+                    fen[fen_index] = PIECE_CHARS[piece];
+                    if ((state->black >> bit_pos) & 1) {
+                        fen[fen_index] = tolower(fen[fen_index]);
+                    }
+                    fen_index++;
+                    break;
+                }
+            }
+        } else {
+            count_since_last_piece++;
+        }
+    }
+    return fen;
 }
 
 board_state* clone_board_state(board_state* state) {
@@ -383,7 +421,16 @@ int perform_move(board_state* state, board_move* move) {
 
     if (to_player != 0) {
         for (int i = 0; i < 6; i++) {
-            state->pieces[i] &= ~move->to; //take piece at to pos
+            if (state->pieces[i] != 0) {
+                state->pieces[i] &= ~move->to; //take piece at to pos
+
+                //update zobrist key on to field change
+                if (to_player == -1) {
+                    state->key ^= zobrist_key_rands[log2_64(move->to)][i];
+                } else {
+                    state->key ^= zobrist_key_rands[log2_64(move->to)][i + 6];
+                }
+            }
         }
     }
     state->pieces[piece_type] |= move->to;
@@ -394,9 +441,17 @@ int perform_move(board_state* state, board_move* move) {
     if (from_player == 1) {
         state->white |= move->to;
         state->black &= ~move->to;
+        //update zobrist key new from and to
+        state->key ^= zobrist_key_rands[log2_64(move->from)][piece_type + 6];
+        state->key ^= zobrist_key_rands[log2_64(move->to)][piece_type + 6];
     } else {
         state->black |= move->to;
         state->white &= ~move->to;
+        //update zobrist key new from and to
+        state->key ^= zobrist_key_rands[log2_64(move->from)][piece_type];
+        state->key ^= zobrist_key_rands[log2_64(move->to)][piece_type];
+        //next player will be white
+        state->key ^= zobrist_white;
         //update full moves
         state->full_moves++;
     }
@@ -987,8 +1042,14 @@ void detect_and_perform_castling(board_state* state, board_move* move) {
         state->pieces[ROOK] |= move->from >> 1;
         if (state->player == 1) {
             state->white |= move->from >> 1;
+            //update zobrist for rook
+            state->key ^= zobrist_key_rands[log2_64(move->to >> 2)][ROOK + 6];
+            state->key ^= zobrist_key_rands[log2_64(move->from >> 1)][ROOK + 6];
         } else {
             state->black |= move->from >> 1;
+            //update zobrist for rook
+            state->key ^= zobrist_key_rands[log2_64(move->to >> 2)][ROOK];
+            state->key ^= zobrist_key_rands[log2_64(move->from >> 1)][ROOK];
         }
         //update castling
         state->castling &= ~move->to;
@@ -1002,8 +1063,14 @@ void detect_and_perform_castling(board_state* state, board_move* move) {
         state->pieces[ROOK] |= move->from << 1;
         if (state->player == 1) {
             state->white |= move->from << 1;
+            //update zobrist for rook
+            state->key ^= zobrist_key_rands[log2_64(move->to << 1)][ROOK + 6];
+            state->key ^= zobrist_key_rands[log2_64(move->from << 1)][ROOK + 6];
         } else {
             state->black |= move->from << 1;
+            //update zobrist for rook
+            state->key ^= zobrist_key_rands[log2_64(move->to << 1)][ROOK];
+            state->key ^= zobrist_key_rands[log2_64(move->from << 1)][ROOK];
         }
         //update castling
         state->castling &= ~move->to;
@@ -1128,14 +1195,22 @@ void pawn_promotion(board_state* state, board_move* move) {
     state->pieces[PAWN] &= ~move->to;
     if (state->player == 1) {
         state->white &= ~move->to;
+        //update zobrist for pawn
+        state->key ^= zobrist_key_rands[log2_64(move->to)][PAWN + 6];
     } else {
         state->black &= ~move->to;
+        //update zobrist for pawn
+        state->key ^= zobrist_key_rands[log2_64(move->to)][PAWN];
     }
     // automatically set new Queen
     state->pieces[QUEEN] |= move->to;
     if (state->player == 1) {
         state->white |= move->to;
+        //update zobrist for queen
+        state->key ^= zobrist_key_rands[log2_64(move->to)][QUEEN + 6];
     } else {
         state->black |= move->to;
+        //update zobrist for queen
+        state->key ^= zobrist_key_rands[log2_64(move->to)][QUEEN];
     }
 }
