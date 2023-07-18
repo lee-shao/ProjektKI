@@ -377,7 +377,7 @@ board_move* get_best_known_move_in_depth(board_state* state, int depth) {
                 if (((combined_board & state->pieces[piece]) >> bit) & 1) {
                     //get and loop trough all valid moves
                     moves = get_all_possible_moves(state, piece, (__uint64_t)1 << bit);
-                    //moves = filter_check(state, (__uint64_t)1 << bit, piece, moves);
+                    moves = filter_check(state, (__uint64_t)1 << bit, piece, moves);
                     //board_move* move = malloc(sizeof(board_move));
                     for (int m_bit = 0; m_bit < 64; m_bit++) {
                         if ((moves >> m_bit) & 1) {
